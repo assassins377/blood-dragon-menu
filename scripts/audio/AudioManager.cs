@@ -46,5 +46,14 @@ namespace BloodDragon
 
         public void StartMenuMusic() { if (_music != null && !_music.Playing) _music.Play(); }
         public void StopMenuMusic()  { _music?.Stop(); }
+
+        public override void _ExitTree()
+        {
+            // Stop active playbacks so they are not reported as leaked at shutdown.
+            _hover?.Stop();
+            _select?.Stop();
+            _tick?.Stop();
+            _music?.Stop();
+        }
     }
 }
