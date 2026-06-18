@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Collections.Generic;
 
 namespace BloodDragon
 {
@@ -19,10 +20,85 @@ namespace BloodDragon
 
         private const string SavePath = "user://settings.cfg";
 
+        // Single source of truth for (de)serialization: every scalar setting is
+        // declared exactly once below (section + key + getter + setter). Save() and
+        // Load() are just loops over this registry, so adding a field is one line and
+        // can never get out of sync between writing and reading.
+        private readonly List<(string Section, string Key, Func<Variant> Get, Action<Variant> Set)> _fields = new();
+
         public override void _Ready()
         {
             Instance = this;
+            BuildFieldRegistry();
             Load();
+        }
+
+        // ──────────────────────────────────────────────────────────────────
+        //  Field registry
+        // ──────────────────────────────────────────────────────────────────
+
+        private void BuildFieldRegistry()
+        {
+            void F(string sec, string key, Func<float> g, Action<float> set)  => _fields.Add((sec, key, () => g(), v => set(v.AsSingle())));
+            void B(string sec, string key, Func<bool> g, Action<bool> set)    => _fields.Add((sec, key, () => g(), v => set(v.AsBool())));
+            void I(string sec, string key, Func<int> g, Action<int> set)      => _fields.Add((sec, key, () => g(), v => set(v.AsInt32())));
+            void Str(string sec, string key, Func<string> g, Action<string> set) => _fields.Add((sec, key, () => g(), v => set(v.AsString())));
+            void E<T>(string sec, string key, Func<T> g, Action<T> set) where T : struct, Enum
+                => _fields.Add((sec, key, () => Convert.ToInt32(g()), v => set((T)(object)v.AsInt32())));
+
+            // Display
+            I("display", "resolution_x", () => Current.Resolution.X, v => Current.Resolution = new Vector2I(v, Current.Resolution.Y));
+            I("display", "resolution_y", () => Current.Resolution.Y, v => Current.Resolution = new Vector2I(Current.Resolution.X, v));
+            B("display", "fullscreen", () => Current.Fullscreen, v => Current.Fullscreen = v);
+            B("display", "vsync", () => Current.VSync, v => Current.VSync = v);
+            I("display", "gpu_frames_in_flight", () => Current.GpuFramesInFlight, v => Current.GpuFramesInFlight = v);
+            B("display", "letterbox", () => Current.Letterbox, v => Current.Letterbox = v);
+            E("display", "directx", () => Current.DirectX, v => Current.DirectX = v);
+            I("display", "msaa", () => Current.Msaa, v => Current.Msaa = v);
+            E("display", "alpha_to_coverage", () => Current.AlphaToCoverage, v => Current.AlphaToCoverage = v);
+            E("display", "ssao", () => Current.Ssao, v => Current.Ssao = v);
+            F("display", "fov", () => Current.Fov, v => Current.Fov = v);
+
+            // Calibration
+            F("calibration", "brightness", () => Current.Brightness, v => Current.Brightness = v);
+            F("calibration", "contrast", () => Current.Contrast, v => Current.Contrast = v);
+            F("calibration", "gamma", () => Current.Gamma, v => Current.Gamma = v);
+
+            // Video quality
+            E("video_quality", "overall_quality", () => Current.OverallQuality, v => Current.OverallQuality = v);
+            E("video_quality", "texture_quality", () => Current.TextureQuality, v => Current.TextureQuality = v);
+            B("video_quality", "shadows", () => Current.Shadows, v => Current.Shadows = v);
+            E("video_quality", "shadow_quality", () => Current.ShadowQuality, v => Current.ShadowQuality = v);
+            E("video_quality", "lighting", () => Current.Lighting, v => Current.Lighting = v);
+            B("video_quality", "post_processing", () => Current.PostProcessing, v => Current.PostProcessing = v);
+            E("video_quality", "water_quality", () => Current.WaterQuality, v => Current.WaterQuality = v);
+            E("video_quality", "draw_distance", () => Current.DrawDistance, v => Current.DrawDistance = v);
+
+            // Controls (key bindings are handled separately — they are a dictionary)
+            F("controls", "mouse_sensitivity", () => Current.MouseSensitivity, v => Current.MouseSensitivity = v);
+            B("controls", "invert_y", () => Current.InvertY, v => Current.InvertY = v);
+            F("controls", "controller_sensitivity", () => Current.ControllerSensitivity, v => Current.ControllerSensitivity = v);
+
+            // Gameplay
+            E("gameplay", "difficulty", () => Current.Difficulty, v => Current.Difficulty = v);
+            B("gameplay", "hints", () => Current.Hints, v => Current.Hints = v);
+            B("gameplay", "auto_aim", () => Current.AutoAim, v => Current.AutoAim = v);
+
+            // Audio
+            F("audio", "master_volume", () => Current.MasterVolume, v => Current.MasterVolume = v);
+            F("audio", "music_volume", () => Current.MusicVolume, v => Current.MusicVolume = v);
+            F("audio", "sfx_volume", () => Current.SfxVolume, v => Current.SfxVolume = v);
+            F("audio", "dialogue_volume", () => Current.DialogueVolume, v => Current.DialogueVolume = v);
+            F("audio", "ambient_volume", () => Current.AmbientVolume, v => Current.AmbientVolume = v);
+            E("audio", "dynamic_range", () => Current.DynamicRange, v => Current.DynamicRange = v);
+            E("audio", "audio_output", () => Current.AudioOutput, v => Current.AudioOutput = v);
+            B("audio", "menu_voice", () => Current.MenuVoice, v => Current.MenuVoice = v);
+
+            // Language
+            Str("language", "ui_language", () => Current.UiLanguage, v => Current.UiLanguage = v);
+            Str("language", "voice_language", () => Current.VoiceLanguage, v => Current.VoiceLanguage = v);
+            Str("language", "subtitle_language", () => Current.SubtitleLanguage, v => Current.SubtitleLanguage = v);
+            E("language", "font", () => Current.FontSize, v => Current.FontSize = v);
         }
 
         // ──────────────────────────────────────────────────────────────────
@@ -44,56 +120,10 @@ namespace BloodDragon
         public void Save()
         {
             var cfg = new ConfigFile();
-
-            cfg.SetValue("display", "resolution_x", Current.Resolution.X);
-            cfg.SetValue("display", "resolution_y", Current.Resolution.Y);
-            cfg.SetValue("display", "fullscreen", Current.Fullscreen);
-            cfg.SetValue("display", "vsync", Current.VSync);
-            cfg.SetValue("display", "gpu_frames_in_flight", Current.GpuFramesInFlight);
-            cfg.SetValue("display", "letterbox", Current.Letterbox);
-            cfg.SetValue("display", "directx", (int)Current.DirectX);
-            cfg.SetValue("display", "msaa", Current.Msaa);
-            cfg.SetValue("display", "alpha_to_coverage", (int)Current.AlphaToCoverage);
-            cfg.SetValue("display", "ssao", (int)Current.Ssao);
-            cfg.SetValue("display", "fov", Current.Fov);
-
-            cfg.SetValue("calibration", "brightness", Current.Brightness);
-            cfg.SetValue("calibration", "contrast", Current.Contrast);
-            cfg.SetValue("calibration", "gamma", Current.Gamma);
-
-            cfg.SetValue("video_quality", "overall_quality", (int)Current.OverallQuality);
-            cfg.SetValue("video_quality", "texture_quality", (int)Current.TextureQuality);
-            cfg.SetValue("video_quality", "shadows", Current.Shadows);
-            cfg.SetValue("video_quality", "shadow_quality", (int)Current.ShadowQuality);
-            cfg.SetValue("video_quality", "lighting", (int)Current.Lighting);
-            cfg.SetValue("video_quality", "post_processing", Current.PostProcessing);
-            cfg.SetValue("video_quality", "water_quality", (int)Current.WaterQuality);
-            cfg.SetValue("video_quality", "draw_distance", (int)Current.DrawDistance);
-
-            cfg.SetValue("controls", "mouse_sensitivity", Current.MouseSensitivity);
-            cfg.SetValue("controls", "invert_y", Current.InvertY);
-            cfg.SetValue("controls", "controller_sensitivity", Current.ControllerSensitivity);
+            foreach (var f in _fields)
+                cfg.SetValue(f.Section, f.Key, f.Get());
             foreach (var kv in Current.KeyBindings)
                 cfg.SetValue("controls", "key_" + kv.Key, kv.Value);
-
-            cfg.SetValue("gameplay", "difficulty", (int)Current.Difficulty);
-            cfg.SetValue("gameplay", "hints", Current.Hints);
-            cfg.SetValue("gameplay", "auto_aim", Current.AutoAim);
-
-            cfg.SetValue("audio", "master_volume", Current.MasterVolume);
-            cfg.SetValue("audio", "music_volume", Current.MusicVolume);
-            cfg.SetValue("audio", "sfx_volume", Current.SfxVolume);
-            cfg.SetValue("audio", "dialogue_volume", Current.DialogueVolume);
-            cfg.SetValue("audio", "ambient_volume", Current.AmbientVolume);
-            cfg.SetValue("audio", "dynamic_range", (int)Current.DynamicRange);
-            cfg.SetValue("audio", "audio_output", (int)Current.AudioOutput);
-            cfg.SetValue("audio", "menu_voice", Current.MenuVoice);
-
-            cfg.SetValue("language", "ui_language", Current.UiLanguage);
-            cfg.SetValue("language", "voice_language", Current.VoiceLanguage);
-            cfg.SetValue("language", "subtitle_language", Current.SubtitleLanguage);
-            cfg.SetValue("language", "font", (int)Current.FontSize);
-
             cfg.Save(SavePath);
         }
 
@@ -102,60 +132,18 @@ namespace BloodDragon
             var cfg = new ConfigFile();
             if (cfg.Load(SavePath) != Error.Ok)
             {
-                // No file yet — apply defaults so the window matches the saved model.
+                // No file yet — apply the model defaults so the engine matches them.
                 ApplyAll();
                 return;
             }
 
-            Current.Resolution = new Vector2I(
-                (int)cfg.GetValue("display", "resolution_x", 1600),
-                (int)cfg.GetValue("display", "resolution_y", 900));
-            Current.Fullscreen = (bool)cfg.GetValue("display", "fullscreen", false);
-            Current.VSync = (bool)cfg.GetValue("display", "vsync", false);
-            Current.GpuFramesInFlight = (int)cfg.GetValue("display", "gpu_frames_in_flight", 4);
-            Current.Letterbox = (bool)cfg.GetValue("display", "letterbox", true);
-            Current.DirectX = (DirectXVersion)(int)cfg.GetValue("display", "directx", (int)DirectXVersion.DirectX11);
-            Current.Msaa = (int)cfg.GetValue("display", "msaa", 8);
-            Current.AlphaToCoverage = (AlphaToCoverage)(int)cfg.GetValue("display", "alpha_to_coverage", (int)AlphaToCoverage.Extended);
-            Current.Ssao = (SsaoMethod)(int)cfg.GetValue("display", "ssao", (int)SsaoMethod.Ssao);
-            Current.Fov = (float)cfg.GetValue("display", "fov", 73.15f);
+            // Each field falls back to its current (default) value when the key is absent.
+            foreach (var f in _fields)
+                f.Set(cfg.GetValue(f.Section, f.Key, f.Get()));
 
-            Current.Brightness = (float)cfg.GetValue("calibration", "brightness", 0.5f);
-            Current.Contrast = (float)cfg.GetValue("calibration", "contrast", 1.0f);
-            Current.Gamma = (float)cfg.GetValue("calibration", "gamma", 2.2f);
-
-            Current.OverallQuality = (QualityLevel)(int)cfg.GetValue("video_quality", "overall_quality", (int)QualityLevel.High);
-            Current.TextureQuality = (QualityLevel)(int)cfg.GetValue("video_quality", "texture_quality", (int)QualityLevel.High);
-            Current.Shadows = (bool)cfg.GetValue("video_quality", "shadows", true);
-            Current.ShadowQuality = (QualityLevel)(int)cfg.GetValue("video_quality", "shadow_quality", (int)QualityLevel.High);
-            Current.Lighting = (QualityLevel)(int)cfg.GetValue("video_quality", "lighting", (int)QualityLevel.High);
-            Current.PostProcessing = (bool)cfg.GetValue("video_quality", "post_processing", true);
-            Current.WaterQuality = (QualityLevel)(int)cfg.GetValue("video_quality", "water_quality", (int)QualityLevel.Medium);
-            Current.DrawDistance = (DrawDistance)(int)cfg.GetValue("video_quality", "draw_distance", (int)DrawDistance.Medium);
-
-            Current.MouseSensitivity = (float)cfg.GetValue("controls", "mouse_sensitivity", 0.5f);
-            Current.InvertY = (bool)cfg.GetValue("controls", "invert_y", false);
-            Current.ControllerSensitivity = (float)cfg.GetValue("controls", "controller_sensitivity", 0.5f);
-            foreach (var action in new System.Collections.Generic.List<string>(Current.KeyBindings.Keys))
-                Current.KeyBindings[action] = (string)cfg.GetValue("controls", "key_" + action, Current.KeyBindings[action]);
-
-            Current.Difficulty = (DifficultyLevel)(int)cfg.GetValue("gameplay", "difficulty", (int)DifficultyLevel.Normal);
-            Current.Hints = (bool)cfg.GetValue("gameplay", "hints", true);
-            Current.AutoAim = (bool)cfg.GetValue("gameplay", "auto_aim", false);
-
-            Current.MasterVolume = (float)cfg.GetValue("audio", "master_volume", 0.8f);
-            Current.MusicVolume = (float)cfg.GetValue("audio", "music_volume", 0.7f);
-            Current.SfxVolume = (float)cfg.GetValue("audio", "sfx_volume", 0.9f);
-            Current.DialogueVolume = (float)cfg.GetValue("audio", "dialogue_volume", 0.85f);
-            Current.AmbientVolume = (float)cfg.GetValue("audio", "ambient_volume", 0.75f);
-            Current.DynamicRange = (DynamicRange)(int)cfg.GetValue("audio", "dynamic_range", (int)DynamicRange.Medium);
-            Current.AudioOutput = (AudioOutput)(int)cfg.GetValue("audio", "audio_output", (int)AudioOutput.Stereo);
-            Current.MenuVoice = (bool)cfg.GetValue("audio", "menu_voice", true);
-
-            Current.UiLanguage = (string)cfg.GetValue("language", "ui_language", "ru");
-            Current.VoiceLanguage = (string)cfg.GetValue("language", "voice_language", "ru");
-            Current.SubtitleLanguage = (string)cfg.GetValue("language", "subtitle_language", "ru");
-            Current.FontSize = (FontSize)(int)cfg.GetValue("language", "font", (int)FontSize.Standard);
+            foreach (var action in new List<string>(Current.KeyBindings.Keys))
+                Current.KeyBindings[action] =
+                    cfg.GetValue("controls", "key_" + action, Current.KeyBindings[action]).AsString();
 
             ApplyAll();
         }
