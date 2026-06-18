@@ -79,63 +79,16 @@ namespace BloodDragon
         public string SubtitleLanguage { get; set; } = "ru";
         public FontSize FontSize { get; set; } = FontSize.Standard;
 
-        /// <summary>Deep copy used for the "pending changes" buffer in the settings menu.</summary>
+        /// <summary>
+        /// Deep copy — used both for the settings menu's "pending changes" buffer and
+        /// to commit those changes back. <see cref="MemberwiseClone"/> copies every field
+        /// automatically, so new settings never need to be added to a hand-written copy.
+        /// </summary>
         public GameSettings Clone()
         {
             var c = (GameSettings)MemberwiseClone();
             c.KeyBindings = new Dictionary<string, string>(KeyBindings);
             return c;
-        }
-
-        /// <summary>Overwrite all fields from another instance (in place).</summary>
-        public void CopyFrom(GameSettings other)
-        {
-            Resolution = other.Resolution;
-            Fullscreen = other.Fullscreen;
-            VSync = other.VSync;
-            GpuFramesInFlight = other.GpuFramesInFlight;
-            Letterbox = other.Letterbox;
-            DirectX = other.DirectX;
-            Msaa = other.Msaa;
-            AlphaToCoverage = other.AlphaToCoverage;
-            Ssao = other.Ssao;
-            Fov = other.Fov;
-
-            Brightness = other.Brightness;
-            Contrast = other.Contrast;
-            Gamma = other.Gamma;
-
-            OverallQuality = other.OverallQuality;
-            TextureQuality = other.TextureQuality;
-            Shadows = other.Shadows;
-            ShadowQuality = other.ShadowQuality;
-            Lighting = other.Lighting;
-            PostProcessing = other.PostProcessing;
-            WaterQuality = other.WaterQuality;
-            DrawDistance = other.DrawDistance;
-
-            MouseSensitivity = other.MouseSensitivity;
-            InvertY = other.InvertY;
-            ControllerSensitivity = other.ControllerSensitivity;
-            KeyBindings = new Dictionary<string, string>(other.KeyBindings);
-
-            Difficulty = other.Difficulty;
-            Hints = other.Hints;
-            AutoAim = other.AutoAim;
-
-            MasterVolume = other.MasterVolume;
-            MusicVolume = other.MusicVolume;
-            SfxVolume = other.SfxVolume;
-            DialogueVolume = other.DialogueVolume;
-            AmbientVolume = other.AmbientVolume;
-            DynamicRange = other.DynamicRange;
-            AudioOutput = other.AudioOutput;
-            MenuVoice = other.MenuVoice;
-
-            UiLanguage = other.UiLanguage;
-            VoiceLanguage = other.VoiceLanguage;
-            SubtitleLanguage = other.SubtitleLanguage;
-            FontSize = other.FontSize;
         }
     }
 }

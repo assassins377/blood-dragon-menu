@@ -64,7 +64,6 @@ namespace BloodDragon
             foreach (var b in new[] { campaign, settings, quit })
             {
                 b.CustomMinimumSize = new Vector2(500, 52);
-                b.MouseEntered += () => AudioManager.Instance?.PlayHover();
                 vbox.AddChild(b);
             }
 

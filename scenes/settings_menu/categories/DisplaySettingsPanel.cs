@@ -17,6 +17,8 @@ namespace BloodDragon
         {
             int resIndex = Array.IndexOf(Resolutions, Pending.Resolution);
             if (resIndex < 0) resIndex = 1;
+            // Labels derived from the resolution list so the two can never drift apart.
+            var resLabels = Array.ConvertAll(Resolutions, r => $"{r.X}×{r.Y}");
 
             _vsyncRow = BoolCycle("ВЕРТ. СИНХРОНИЗАЦИЯ", Pending.VSync, v => Pending.VSync = v);
 
@@ -25,9 +27,8 @@ namespace BloodDragon
 
             var rows = new List<Control>
             {
-                Cycle("РАЗРЕШЕНИЕ ЭКРАНА",
-                    new[] { "1280×720", "1600×900", "1920×1080", "2560×1440", "3840×2160" },
-                    resIndex, i => Pending.Resolution = Resolutions[i]),
+                Cycle("РАЗРЕШЕНИЕ ЭКРАНА", resLabels, resIndex,
+                    i => Pending.Resolution = Resolutions[i]),
                 Cycle("ОКОННЫЙ РЕЖИМ", new[] { "В ОКНЕ", "ПОЛНОЭКРАННЫЙ" },
                     Pending.Fullscreen ? 1 : 0, i => Pending.Fullscreen = i == 1),
                 _vsyncRow,

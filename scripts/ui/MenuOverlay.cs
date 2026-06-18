@@ -20,7 +20,17 @@ namespace BloodDragon
             root.AddChild(layer);
         }
 
-        /// <summary>Left-aligned menu button: transparent normally, full green fill on hover/focus.</summary>
+        /// <summary>Menu-button background stylebox with the shared padding.</summary>
+        public static StyleBoxFlat ButtonStylebox(Color bg)
+        {
+            var sb = new StyleBoxFlat { BgColor = bg };
+            sb.SetContentMarginAll(10);
+            sb.ContentMarginLeft = 18;
+            return sb;
+        }
+
+        /// <summary>Left-aligned menu button: transparent normally, full green fill on hover/focus.
+        /// Plays the hover blip automatically, so callers never wire that up themselves.</summary>
         public static Button MakeMenuButton(string text, int fontSize = 30)
         {
             var b = new Button
@@ -32,17 +42,8 @@ namespace BloodDragon
             b.AddThemeFontOverride("font", MenuTheme.Mono);
             b.AddThemeFontSizeOverride("font_size", fontSize);
 
-            // Normal: transparent bg, light text.
-            var normal = new StyleBoxFlat { BgColor = MenuTheme.Transparent };
-            normal.SetContentMarginAll(10);
-            normal.ContentMarginLeft = 18;
-
-            // Hover / focus / pressed: solid green fill, dark text.
-            var active = new StyleBoxFlat { BgColor = MenuTheme.Accent };
-            active.SetContentMarginAll(10);
-            active.ContentMarginLeft = 18;
-
-            b.AddThemeStyleboxOverride("normal", normal);
+            var active = ButtonStylebox(MenuTheme.Accent);
+            b.AddThemeStyleboxOverride("normal", ButtonStylebox(MenuTheme.Transparent));
             b.AddThemeStyleboxOverride("hover", active);
             b.AddThemeStyleboxOverride("pressed", active);
             b.AddThemeStyleboxOverride("focus", active);
@@ -51,6 +52,8 @@ namespace BloodDragon
             b.AddThemeColorOverride("font_hover_color", MenuTheme.TextActive);
             b.AddThemeColorOverride("font_focus_color", MenuTheme.TextActive);
             b.AddThemeColorOverride("font_pressed_color", MenuTheme.TextActive);
+
+            b.MouseEntered += () => AudioManager.Instance?.PlayHover();
             return b;
         }
     }

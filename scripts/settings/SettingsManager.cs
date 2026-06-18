@@ -108,7 +108,9 @@ namespace BloodDragon
         /// <summary>Commit a pending copy (from the settings menu), apply and save.</summary>
         public void ApplyFromPending(GameSettings pending)
         {
-            Current.CopyFrom(pending);
+            // Take an independent copy so the menu's buffer and the live settings
+            // don't alias (Clone gives a fresh KeyBindings dictionary too).
+            Current = pending.Clone();
             ApplyAll();
             Save();
         }

@@ -106,13 +106,11 @@ namespace BloodDragon
             var accept = MenuOverlay.MakeMenuButton("Принять", 26);
             accept.CustomMinimumSize = new Vector2(220, 48);
             accept.Pressed += OnAccept;
-            accept.MouseEntered += () => AudioManager.Instance?.PlayHover();
             bottom.AddChild(accept);
 
             var back = MenuOverlay.MakeMenuButton("Назад", 26);
             back.CustomMinimumSize = new Vector2(220, 48);
             back.Pressed += OnBack;
-            back.MouseEntered += () => AudioManager.Instance?.PlayHover();
             bottom.AddChild(back);
         }
 
@@ -130,7 +128,6 @@ namespace BloodDragon
                 var btn = MenuOverlay.MakeMenuButton(name, 24);
                 btn.CustomMinimumSize = new Vector2(0, 46);
                 btn.Pressed += () => { AudioManager.Instance?.PlaySelect(); SelectCategory(name); };
-                btn.MouseEntered += () => AudioManager.Instance?.PlayHover();
                 _categoryButtons.Add(btn);
                 _categoryList.AddChild(btn);
             }
@@ -145,10 +142,8 @@ namespace BloodDragon
             foreach (var b in _categoryButtons)
             {
                 bool sel = b.Text == name;
-                var sb = new StyleBoxFlat { BgColor = sel ? MenuTheme.Accent : MenuTheme.Transparent };
-                sb.SetContentMarginAll(10);
-                sb.ContentMarginLeft = 18;
-                b.AddThemeStyleboxOverride("normal", sb);
+                b.AddThemeStyleboxOverride("normal",
+                    MenuOverlay.ButtonStylebox(sel ? MenuTheme.Accent : MenuTheme.Transparent));
                 b.AddThemeColorOverride("font_color", sel ? MenuTheme.TextActive : MenuTheme.TextNormal);
             }
         }
