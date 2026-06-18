@@ -215,16 +215,25 @@ namespace BloodDragon
                 ? DisplayServer.VSyncMode.Enabled
                 : DisplayServer.VSyncMode.Disabled);
 
-            var vp = (SceneTree)Engine.GetMainLoop() is { } tree ? tree.Root : null;
-            if (vp != null)
-                vp.Msaa3D = Current.Msaa switch
+            var win = (SceneTree)Engine.GetMainLoop() is { } tree ? tree.Root : null;
+            if (win != null)
+            {
+                win.Msaa3D = Current.Msaa switch
                 {
                     2 => Viewport.Msaa.Msaa2X,
                     4 => Viewport.Msaa.Msaa4X,
                     8 => Viewport.Msaa.Msaa8X,
                     _ => Viewport.Msaa.Disabled,
                 };
+
+                // FORMAT LETTERBOX: keep aspect with black bars, or expand to fill.
+                win.ContentScaleAspect = Current.Letterbox
+                    ? Window.ContentScaleAspectEnum.Keep
+                    : Window.ContentScaleAspectEnum.Expand;
+            }
         }
+
+        private AudioEffectCompressor _masterCompressor;
 
         public void ApplyAudio()
         {
@@ -233,6 +242,28 @@ namespace BloodDragon
             SetBus("SFX", Current.SfxVolume);
             SetBus("Dialogue", Current.DialogueVolume);
             SetBus("Ambient", Current.AmbientVolume);
+            ApplyDynamicRange();
+        }
+
+        /// <summary>ДИНАМИЧЕСКИЙ ДИАПАЗОН → a compressor on the Master bus.
+        /// Narrow range = stronger compression (night mode), wide = transparent.</summary>
+        private void ApplyDynamicRange()
+        {
+            int master = AudioServer.GetBusIndex("Master");
+            if (master < 0) return;
+
+            if (_masterCompressor == null)
+            {
+                _masterCompressor = new AudioEffectCompressor();
+                AudioServer.AddBusEffect(master, _masterCompressor);
+            }
+
+            (_masterCompressor.Ratio, _masterCompressor.Threshold) = Current.DynamicRange switch
+            {
+                DynamicRange.Low => (8f, -24f),    // heavily compressed
+                DynamicRange.Medium => (3f, -16f), // mild
+                _ => (1f, 0f),                     // wide → effectively bypassed
+            };
         }
 
         private static void SetBus(string name, float linear)

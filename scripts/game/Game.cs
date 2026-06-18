@@ -13,6 +13,7 @@ namespace BloodDragon
         private DirectionalLight3D _sun;
         private Player _player;
         private CanvasLayer _pauseLayer;
+        private ShaderMaterial _calibration;
         private bool _paused;
 
         public override void _Ready()
@@ -21,6 +22,7 @@ namespace BloodDragon
             BuildArena();
             BuildPlayer();
             BuildHud();
+            BuildCalibration();
             BuildPauseMenu();
 
             ApplyGraphics();
@@ -35,7 +37,8 @@ namespace BloodDragon
         }
 
         private void ApplyGraphics()
-            => GraphicsController.Apply(_worldEnv, _sun, _player?.Camera, SettingsManager.Instance.Current);
+            => GraphicsController.Apply(_worldEnv, _sun, _player?.Camera, GetViewport(),
+                                        _calibration, SettingsManager.Instance.Current);
 
         // ── World ────────────────────────────────────────────────────────
 
@@ -129,6 +132,20 @@ namespace BloodDragon
             var hint = MenuTheme.MakeLabel("WASD — движение   SHIFT — бег   ПРОБЕЛ — прыжок   ESC — пауза", 18);
             hint.Position = new Vector2(40, 30);
             layer.AddChild(hint);
+        }
+
+        private void BuildCalibration()
+        {
+            var shader = GD.Load<Shader>("res://shaders/calibration.gdshader");
+            if (shader == null) return;
+
+            _calibration = new ShaderMaterial { Shader = shader };
+            var layer = new CanvasLayer { Layer = 80 };
+            var rect = new ColorRect { Color = new Color(1, 1, 1, 1), Material = _calibration };
+            rect.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+            rect.MouseFilter = Control.MouseFilterEnum.Ignore;
+            layer.AddChild(rect);
+            AddChild(layer);
         }
 
         private void BuildPauseMenu()
