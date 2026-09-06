@@ -7,11 +7,11 @@ namespace BloodDragon
             RichPage(
                 "[b]BLOOD DRAGON[/b]\n"
               + "Версия: v1.0.0\n"
-              + "Разработчик: [Имя студии]\n"
+              + "Разработчик: open-source\n"
               + "Движок: Godot 4.6 .NET\n"
               + "Год выпуска: 2026\n\n"
-              + "[b]ЛИЦЕНЗИИ[/b]\nGodot Engine (MIT)\n\n"
-              + "[b]КОНТАКТЫ[/b]\nСайт • email • соцсети");
+              + "[b]ЛИЦЕНЗИИ[/b]\nGodot Engine (MIT)\nЭтот проект (MIT)\n\n"
+              + "[b]КОНТАКТЫ[/b]\nРепозиторий на GitHub");
         }
     }
 }

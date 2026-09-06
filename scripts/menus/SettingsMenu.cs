@@ -18,6 +18,7 @@ namespace BloodDragon
             ("КАЧЕСТВО ВИДЕО",      "res://scenes/settings_menu/categories/VideoQualitySettingsPanel.tscn"),
             ("ЭЛЕМЕНТЫ УПРАВЛЕНИЯ", "res://scenes/settings_menu/categories/InputSettingsPanel.tscn"),
             ("ИГРОВОЙ ПРОЦЕСС",     "res://scenes/settings_menu/categories/GameplaySettingsPanel.tscn"),
+            ("ЯЗЫК",                "res://scenes/settings_menu/categories/LanguageSettingsPanel.tscn"),
             ("ЗВУК",                "res://scenes/settings_menu/categories/AudioSettingsPanel.tscn"),
             ("РУКОВОДСТВО",         "res://scenes/settings_menu/categories/ManualPanel.tscn"),
             ("ТИТРЫ",               "res://scenes/settings_menu/categories/CreditsSettingsPanel.tscn"),
