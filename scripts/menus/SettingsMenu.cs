@@ -166,11 +166,12 @@ namespace BloodDragon
 
         public override void _Input(InputEvent @event)
         {
-            if (@event.IsActionPressed("ui_cancel"))
-            {
-                OnBack();
-                GetViewport().SetInputAsHandled();
-            }
+            if (@event == null || !@event.IsActionPressed("ui_cancel"))
+                return;
+
+            // Mark handled before changing scene — GetViewport() is null after ChangeSceneToFile.
+            GetViewport()?.SetInputAsHandled();
+            OnBack();
         }
 
         private void AnimateFadeIn()
