@@ -155,13 +155,13 @@ namespace BloodDragon
         {
             AudioManager.Instance?.PlaySelect();
             SettingsManager.Instance.ApplyFromPending(_pending);
-            GetTree().ChangeSceneToFile("res://scenes/main_menu/MainMenu.tscn");
+            GoMainMenu();
         }
 
         private void OnBack()
         {
             AudioManager.Instance?.PlaySelect();
-            GetTree().ChangeSceneToFile("res://scenes/main_menu/MainMenu.tscn");
+            GoMainMenu();
         }
 
         public override void _Input(InputEvent @event)
@@ -169,9 +169,19 @@ namespace BloodDragon
             if (@event == null || !@event.IsActionPressed("ui_cancel"))
                 return;
 
-            // Mark handled before changing scene — GetViewport() is null after ChangeSceneToFile.
             GetViewport()?.SetInputAsHandled();
-            OnBack();
+            // Godot 4.4+: change_scene_to_file removes this node from the tree
+            // immediately (get_tree / get_viewport become null). Defer so we
+            // don't run ChangeSceneToFile in the middle of input dispatch.
+            // https://docs.godotengine.org/en/4.4/classes/class_scenetree.html
+            CallDeferred(MethodName.OnBack);
+        }
+
+        private void GoMainMenu()
+        {
+            var tree = GetTree();
+            if (tree == null) return;
+            tree.CallDeferred(SceneTree.MethodName.ChangeSceneToFile, "res://scenes/main_menu/MainMenu.tscn");
         }
 
         private void AnimateFadeIn()
