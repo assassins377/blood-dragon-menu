@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://cbhv4wt8kmdo8"]
 
-[ext_resource type="Script" path="res://scenes/settings_menu/categories/DisplaySettingsPanel.cs" id="1"]
+[ext_resource type="Script" uid="uid://c78lqmvvhwj7i" path="res://scenes/settings_menu/categories/DisplaySettingsPanel.cs" id="1"]
 
-[node name="DisplaySettingsPanel" type="Control"]
+[node name="DisplaySettingsPanel" type="Control" unique_id=2100338070]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

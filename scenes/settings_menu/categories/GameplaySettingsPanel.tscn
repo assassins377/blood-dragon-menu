@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://l67njq1cilhr"]
 
-[ext_resource type="Script" path="res://scenes/settings_menu/categories/GameplaySettingsPanel.cs" id="1"]
+[ext_resource type="Script" uid="uid://gdcngeqbkg06" path="res://scenes/settings_menu/categories/GameplaySettingsPanel.cs" id="1"]
 
-[node name="GameplaySettingsPanel" type="Control"]
+[node name="GameplaySettingsPanel" type="Control" unique_id=2128890222]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

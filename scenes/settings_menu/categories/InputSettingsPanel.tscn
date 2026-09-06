@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://5e7yxhy643wm"]
 
-[ext_resource type="Script" path="res://scenes/settings_menu/categories/InputSettingsPanel.cs" id="1"]
+[ext_resource type="Script" uid="uid://3gcndhta2w7d" path="res://scenes/settings_menu/categories/InputSettingsPanel.cs" id="1"]
 
-[node name="InputSettingsPanel" type="Control"]
+[node name="InputSettingsPanel" type="Control" unique_id=813607840]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

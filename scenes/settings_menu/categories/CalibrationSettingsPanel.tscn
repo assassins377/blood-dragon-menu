@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://qyxnq2v2lnop"]
 
-[ext_resource type="Script" path="res://scenes/settings_menu/categories/CalibrationSettingsPanel.cs" id="1"]
+[ext_resource type="Script" uid="uid://b17wnpmyyvdg5" path="res://scenes/settings_menu/categories/CalibrationSettingsPanel.cs" id="1"]
 
-[node name="CalibrationSettingsPanel" type="Control"]
+[node name="CalibrationSettingsPanel" type="Control" unique_id=1892832221]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

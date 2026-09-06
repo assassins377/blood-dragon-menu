@@ -33,6 +33,8 @@
 
 Настройки пишутся в `user://settings.cfg` и применяются через autoload `SettingsManager`.
 
+Появление кнопок главного меню использует **Control offset transforms** из Godot 4.7 (анимация не ломает layout `VBoxContainer`). Геймпад игнорируется, пока окно не в фокусе.
+
 ## Структура
 
 ```

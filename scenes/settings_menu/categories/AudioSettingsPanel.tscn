@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://b65j3reqrdv2q"]
 
-[ext_resource type="Script" path="res://scenes/settings_menu/categories/AudioSettingsPanel.cs" id="1"]
+[ext_resource type="Script" uid="uid://db28cqdjhj2s0" path="res://scenes/settings_menu/categories/AudioSettingsPanel.cs" id="1"]
 
-[node name="AudioSettingsPanel" type="Control"]
+[node name="AudioSettingsPanel" type="Control" unique_id=66167977]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
