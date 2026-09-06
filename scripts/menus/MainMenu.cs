@@ -95,7 +95,7 @@ namespace BloodDragon
             var tween = CreateTween().SetParallel();
             tween.TweenProperty(this, "modulate:a", 1.0f, 0.3f);
 
-            // Godot 4.7: offset transforms survive VBoxContainer layout, so the
+            // Offset transforms survive VBoxContainer layout, so the
             // slide-in is visual-only and does not steal hover hitboxes.
             float delay = 0f;
             foreach (var b in buttons)
