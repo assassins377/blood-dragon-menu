@@ -56,5 +56,57 @@ namespace BloodDragon
             b.MouseEntered += () => AudioManager.Instance?.PlayHover();
             return b;
         }
+
+        /// <summary>Bottom legend like Blood Dragon: ВЫБРАТЬ / ПРИНЯТЬ / НАЗАД.</summary>
+        public static NavBar MakeNavBar(BoxContainer.AlignmentMode align = BoxContainer.AlignmentMode.End)
+        {
+            var bar = new NavBar();
+            bar.SetAnchorsPreset(Control.LayoutPreset.BottomWide);
+            bar.AnchorTop = 1;
+            bar.AnchorBottom = 1;
+            bar.AnchorLeft = 0;
+            bar.AnchorRight = 1;
+            bar.OffsetLeft = 80;
+            bar.OffsetRight = -80;
+            bar.OffsetTop = -64;
+            bar.OffsetBottom = -24;
+            bar.Alignment = align;
+            bar.AddThemeConstantOverride("separation", 36);
+            bar.MouseFilter = Control.MouseFilterEnum.Ignore;
+            return bar;
+        }
+    }
+
+    public partial class NavBar : HBoxContainer
+    {
+        private readonly Label _select;
+        private readonly Label _accept;
+        private readonly Label _back;
+
+        public NavBar()
+        {
+            _select = Hint("ENTER", "ВЫБРАТЬ");
+            _accept = Hint("ENTER", "ПРИНЯТЬ");
+            _back = Hint("ESC", "НАЗАД");
+            AddChild(_select);
+            AddChild(_accept);
+            AddChild(_back);
+        }
+
+        public void SetHints(bool select, bool back, bool accept = false)
+        {
+            _select.Visible = select;
+            _accept.Visible = accept;
+            _back.Visible = back;
+            Visible = select || back || accept;
+        }
+
+        private static Label Hint(string key, string action)
+        {
+            var l = MenuTheme.MakeLabel($"{key}  {action}", 18);
+            l.AddThemeColorOverride("font_color", MenuTheme.Accent);
+            l.MouseFilter = MouseFilterEnum.Ignore;
+            return l;
+        }
     }
 }

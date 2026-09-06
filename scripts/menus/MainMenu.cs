@@ -1,15 +1,26 @@
 using Godot;
+using System.Collections.Generic;
 
 namespace BloodDragon
 {
     /// <summary>
-    /// Main menu: dark green background, title top-left with a blinking cursor,
-    /// vertical button list on the left, CRT overlay, fade-in on enter.
+    /// Attract screen ("press any key") then the left-side menu.
+    /// Campaign opens a submenu (new / continue / load). Returning from
+    /// settings skips the attract screen.
     /// </summary>
     public partial class MainMenu : Control
     {
         private const string Title = "BLOOD DRAGON 1.0 ";
+
+        /// <summary>Once the attract screen is dismissed, stay dismissed for this session.</summary>
+        private static bool AttractDone;
+
         private Label _cursor;
+        private VBoxContainer _list;
+        private Control _attract;
+        private NavBar _nav;
+        private enum Page { Root, Campaign }
+        private Page _page = Page.Root;
 
         public override void _Ready()
         {
@@ -21,11 +32,43 @@ namespace BloodDragon
             AddChild(bg);
 
             BuildTitle();
-            var buttons = BuildMenu();
+            BuildList();
+            _nav = MenuOverlay.MakeNavBar();
+            _nav.SetHints(select: false, back: false);
+            AddChild(_nav);
             MenuOverlay.AddCrt(this);
             AudioManager.Instance?.StartMenuMusic();
 
-            AnimateFadeIn(buttons);
+            if (AttractDone)
+                ShowRoot(animate: false);
+            else
+                ShowAttract();
+        }
+
+        public override void _UnhandledInput(InputEvent @event)
+        {
+            if (_attract == null || !_attract.Visible)
+            {
+                if (_page == Page.Campaign && @event.IsActionPressed("ui_cancel"))
+                {
+                    AudioManager.Instance?.PlaySelect();
+                    ShowRoot(animate: true);
+                    GetViewport().SetInputAsHandled();
+                }
+                return;
+            }
+
+            bool go = @event is InputEventKey k && k.Pressed && !k.Echo
+                   || @event is InputEventMouseButton mb && mb.Pressed
+                   || @event is InputEventJoypadButton jb && jb.Pressed
+                   || @event.IsActionPressed("ui_accept");
+            if (!go) return;
+
+            AttractDone = true;
+            AudioManager.Instance?.PlaySelect();
+            HideAttract();
+            ShowRoot(animate: true);
+            GetViewport().SetInputAsHandled();
         }
 
         private void BuildTitle()
@@ -43,40 +86,80 @@ namespace BloodDragon
             _cursor.AddThemeColorOverride("font_color", MenuTheme.Accent);
             titleBox.AddChild(_cursor);
 
-            // Blinking cursor: 1s cycle.
             var timer = new Timer { WaitTime = 0.5, Autostart = true };
             timer.Timeout += () => _cursor.Visible = !_cursor.Visible;
             AddChild(timer);
         }
 
-        private Button[] BuildMenu()
+        private void BuildList()
         {
-            var vbox = new VBoxContainer();
-            vbox.Position = new Vector2(80, 260);
-            vbox.AddThemeConstantOverride("separation", 14);
-            vbox.CustomMinimumSize = new Vector2(500, 0);
-            AddChild(vbox);
-
-            var campaign = MenuOverlay.MakeMenuButton("Кампания");
-            var settings = MenuOverlay.MakeMenuButton("Справка и параметры");
-            var quit = MenuOverlay.MakeMenuButton("Выйти из игры");
-            var buttons = new[] { campaign, settings, quit };
-
-            foreach (var b in buttons)
-            {
-                b.CustomMinimumSize = new Vector2(500, 52);
-                vbox.AddChild(b);
-            }
-
-            campaign.Pressed += OnCampaign;
-            settings.Pressed += OnSettings;
-            quit.Pressed += () => { AudioManager.Instance?.PlaySelect(); GetTree().Quit(); };
-
-            campaign.GrabFocus();
-            return buttons;
+            _list = new VBoxContainer();
+            _list.Position = new Vector2(80, 260);
+            _list.AddThemeConstantOverride("separation", 14);
+            _list.CustomMinimumSize = new Vector2(500, 0);
+            _list.Visible = false;
+            AddChild(_list);
         }
 
-        private void OnCampaign()
+        private void ShowAttract()
+        {
+            _list.Visible = false;
+            _nav.SetHints(select: true, back: false);
+            _attract = new Control();
+            _attract.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+            _attract.MouseFilter = MouseFilterEnum.Stop;
+            AddChild(_attract);
+
+            var prompt = MenuTheme.MakeLabel("НАЖМИТЕ ЛЮБУЮ КЛАВИШУ", 28);
+            prompt.HorizontalAlignment = HorizontalAlignment.Center;
+            prompt.SetAnchorsAndOffsetsPreset(LayoutPreset.Center);
+            prompt.OffsetTop = 80;
+            prompt.AddThemeColorOverride("font_color", MenuTheme.Accent);
+            _attract.AddChild(prompt);
+
+            var blink = new Timer { WaitTime = 0.7, Autostart = true };
+            blink.Timeout += () => prompt.Visible = !prompt.Visible;
+            _attract.AddChild(blink);
+        }
+
+        private void HideAttract()
+        {
+            _attract?.QueueFree();
+            _attract = null;
+        }
+
+        private void ShowRoot(bool animate)
+        {
+            _page = Page.Root;
+            _nav.SetHints(select: true, back: false);
+            FillList(new (string Label, System.Action OnPress)[]
+            {
+                ("Кампания", OnCampaignMenu),
+                ("Справка и параметры", OnSettings),
+                ("Выйти из игры", () => { AudioManager.Instance?.PlaySelect(); GetTree().Quit(); }),
+            }, animate);
+        }
+
+        private void OnCampaignMenu()
+        {
+            AudioManager.Instance?.PlaySelect();
+            ShowCampaign();
+        }
+
+        private void ShowCampaign()
+        {
+            _page = Page.Campaign;
+            _nav.SetHints(select: true, back: true);
+            FillList(new (string Label, System.Action OnPress)[]
+            {
+                ("Новая игра", StartGame),
+                ("Продолжить игру", StartGame),
+                ("Загрузить игру", StartGame),
+                ("Назад", () => { AudioManager.Instance?.PlaySelect(); ShowRoot(animate: true); }),
+            }, animate: true);
+        }
+
+        private void StartGame()
         {
             AudioManager.Instance?.PlaySelect();
             AudioManager.Instance?.StopMenuMusic();
@@ -86,17 +169,35 @@ namespace BloodDragon
         private void OnSettings()
         {
             AudioManager.Instance?.PlaySelect();
+            AttractDone = true;
             GetTree().ChangeSceneToFile("res://scenes/settings_menu/SettingsMenu.tscn");
         }
 
-        private void AnimateFadeIn(Button[] buttons)
+        private void FillList((string Label, System.Action OnPress)[] items, bool animate)
         {
-            Modulate = new Color(1, 1, 1, 0);
-            var tween = CreateTween().SetParallel();
-            tween.TweenProperty(this, "modulate:a", 1.0f, 0.3f);
+            while (_list.GetChildCount() > 0)
+                _list.GetChild(0).Free();
 
-            // Offset transforms survive VBoxContainer layout, so the
-            // slide-in is visual-only and does not steal hover hitboxes.
+            _list.Visible = true;
+            var buttons = new List<Button>();
+            foreach (var item in items)
+            {
+                var b = MenuOverlay.MakeMenuButton(item.Label);
+                b.CustomMinimumSize = new Vector2(500, 52);
+                var press = item.OnPress;
+                b.Pressed += press;
+                _list.AddChild(b);
+                buttons.Add(b);
+            }
+
+            buttons[0].GrabFocus();
+            if (animate)
+                AnimateButtons(buttons.ToArray());
+        }
+
+        private void AnimateButtons(Button[] buttons)
+        {
+            var tween = CreateTween().SetParallel();
             float delay = 0f;
             foreach (var b in buttons)
             {
