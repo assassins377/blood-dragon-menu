@@ -13,12 +13,14 @@ namespace BloodDragon
                                  Viewport viewport, ShaderMaterial calibration, GameSettings s)
         {
             bool software = SettingsManager.IsSoftwareRenderer();
+            // Compatibility has no SSIL (Godot renderer feature table).
+            bool renderingDevice = RenderingServer.GetCurrentRenderingMethod() != "gl_compatibility";
 
             if (worldEnv?.Environment is { } env)
             {
                 env.GlowEnabled = s.PostProcessing && !software;
                 env.SsaoEnabled = s.Ssao != SsaoMethod.Off && !software;
-                env.SsilEnabled = s.Lighting == QualityLevel.High && !software;
+                env.SsilEnabled = s.Lighting == QualityLevel.High && !software && renderingDevice;
             }
 
             if (sun != null)

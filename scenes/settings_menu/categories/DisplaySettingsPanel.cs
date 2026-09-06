@@ -54,7 +54,7 @@ namespace BloodDragon
         {
             if (OS.GetName() == "Linux")
             {
-                var row = Cycle("ГРАФИЧЕСКИЙ API", new[] { "OPENGL COMPAT" }, 0, _ => { });
+                var row = Cycle("ГРАФИЧЕСКИЙ API", new[] { "OPENGL 3.3 COMPAT" }, 0, _ => { });
                 row.SetDisabled(true);
                 return row;
             }

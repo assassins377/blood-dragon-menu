@@ -71,6 +71,23 @@
 2. Дождитесь восстановления NuGet и сборки C#.
 3. Запустите проект: главная сцена — `scenes/main_menu/MainMenu.tscn`.
 
+### Linux и виртуальные машины
+
+На Linux проект явно ставит **GL Compatibility** (`rendering/renderer/rendering_method.linuxbsd`). Это не «даунгрейд ради VM», а рекомендация [документации Godot](https://docs.godotengine.org/en/4.7/tutorials/rendering/renderers.html) для 2D и простого 3D: OpenGL 3.3, низкая базовая стоимость кадра.
+
+Почему не Vulkan/Forward+ в госте Linux:
+
+- С Godot 4.4 движок падает на OpenGL, **только если Vulkan совсем нет**. Mesa **Lavapipe/llvmpipe — валидный Vulkan 1.4**, поэтому Godot выбирает его и рисует на CPU. Fallback до Compatibility не срабатывает ([GH-97142](https://github.com/godotengine/godot/pull/97142), [Ubuntu/Godot #2072335](https://bugs.launchpad.net/bugs/2072335)).
+- VMware SVGA II в госте даёт **OpenGL 3.3/4.x через vmwgfx**. Гостевой Vulkan на SVGA обычно и есть lavapipe. 3D Acceleration на хосте включает именно GL, не отдельный GPU Vulkan в госте ([Broadcom Workstation](https://techdocs.broadcom.com/us/en/vmware-cis/desktop-hypervisors/workstation-pro/26H1/using-vmware-workstation-pro/configuring-and-managing-virtual-machines/configure-display-settings-for-a-virtual-machine/prepare-the-host-system-to-use-accelerated-3d-graphics.html)).
+
+Проверка: в логе должно быть `OpenGL 3` / `Compatibility`, не `Vulkan … llvmpipe`. Принудительно:
+
+```bash
+godot --rendering-method gl_compatibility --rendering-driver opengl3
+```
+
+Если адаптер всё равно llvmpipe, в коде режутся MSAA/SSAO/SSIL/glow/шум CRT. SSIL на Compatibility нет вообще. Windows остаётся Forward+ / D3D12.
+
 Autoload: `SettingsManager`, `AudioManager`.
 
 ---
