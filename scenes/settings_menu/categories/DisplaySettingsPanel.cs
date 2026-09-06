@@ -35,12 +35,7 @@ namespace BloodDragon
                 Cycle("ФРЕЙМОВ В БУФЕРЕ GPU", new[] { "1", "2", "3", "4" },
                     Mathf.Clamp(Pending.GpuFramesInFlight - 1, 0, 3), i => Pending.GpuFramesInFlight = i + 1),
                 BoolCycle("FORMAT LETTERBOX", Pending.Letterbox, v => Pending.Letterbox = v),
-                Cycle("DIRECTX", new[] { "DIRECTX 9", "DIRECTX 11", "DIRECTX 12" },
-                    (int)Pending.DirectX, i =>
-                    {
-                        Pending.DirectX = (DirectXVersion)i;
-                        _vsyncRow.SetDisabled(i == (int)DirectXVersion.DirectX9);
-                    }),
+                ApiRow(),
                 Cycle("MSAA СГЛАЖИВАНИЕ", new[] { "ВЫКЛ", "2", "4", "8" },
                     Pending.Msaa switch { 2 => 1, 4 => 2, 8 => 3, _ => 0 },
                     i => Pending.Msaa = i switch { 1 => 2, 2 => 4, 3 => 8, _ => 0 }),
@@ -53,6 +48,23 @@ namespace BloodDragon
 
             Scroll(rows);
             _vsyncRow.SetDisabled(Pending.DirectX == DirectXVersion.DirectX9);
+        }
+
+        private CycleOption ApiRow()
+        {
+            if (OS.GetName() == "Linux")
+            {
+                var row = Cycle("ГРАФИЧЕСКИЙ API", new[] { "OPENGL COMPAT" }, 0, _ => { });
+                row.SetDisabled(true);
+                return row;
+            }
+
+            return Cycle("DIRECTX", new[] { "DIRECTX 9", "DIRECTX 11", "DIRECTX 12" },
+                (int)Pending.DirectX, i =>
+                {
+                    Pending.DirectX = (DirectXVersion)i;
+                    _vsyncRow.SetDisabled(i == (int)DirectXVersion.DirectX9);
+                });
         }
     }
 }

@@ -12,16 +12,18 @@ namespace BloodDragon
         public static void Apply(WorldEnvironment worldEnv, DirectionalLight3D sun, Camera3D cam,
                                  Viewport viewport, ShaderMaterial calibration, GameSettings s)
         {
+            bool software = SettingsManager.IsSoftwareRenderer();
+
             if (worldEnv?.Environment is { } env)
             {
-                env.GlowEnabled = s.PostProcessing;          // ПОСТ-ОБРАБОТКА
-                env.SsaoEnabled = s.Ssao != SsaoMethod.Off;  // МЕТОД SSAO (on/off)
-                env.SsilEnabled = s.Lighting == QualityLevel.High; // ОСВЕЩЕНИЕ → SSIL on high
+                env.GlowEnabled = s.PostProcessing && !software;
+                env.SsaoEnabled = s.Ssao != SsaoMethod.Off && !software;
+                env.SsilEnabled = s.Lighting == QualityLevel.High && !software;
             }
 
             if (sun != null)
             {
-                sun.ShadowEnabled = s.Shadows;               // ТЕНИ
+                sun.ShadowEnabled = s.Shadows && !software;
                 sun.ShadowBlur = s.ShadowQuality switch       // КАЧЕСТВО ТЕНЕЙ
                 {
                     QualityLevel.Low => 1.5f,

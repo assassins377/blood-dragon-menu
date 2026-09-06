@@ -15,7 +15,14 @@ namespace BloodDragon
             var rect = new ColorRect { Color = new Color(1, 1, 1, 1) };
             rect.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
             rect.MouseFilter = Control.MouseFilterEnum.Ignore;
-            rect.Material = new ShaderMaterial { Shader = shader };
+            var mat = new ShaderMaterial { Shader = shader };
+            if (SettingsManager.IsSoftwareRenderer())
+            {
+                mat.SetShaderParameter("scanline_count", 280.0f);
+                mat.SetShaderParameter("scanline_intensity", 0.08f);
+                mat.SetShaderParameter("noise_intensity", 0.0f);
+            }
+            rect.Material = mat;
             layer.AddChild(rect);
             root.AddChild(layer);
         }

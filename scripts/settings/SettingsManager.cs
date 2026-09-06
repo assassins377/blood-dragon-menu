@@ -26,11 +26,23 @@ namespace BloodDragon
         // can never get out of sync between writing and reading.
         private readonly List<(string Section, string Key, Func<Variant> Get, Action<Variant> Set)> _fields = new();
 
+        /// <summary>True when Vulkan/OpenGL is a CPU rasterizer (llvmpipe, SwiftShader).</summary>
+        public static bool IsSoftwareRenderer()
+        {
+            string n = RenderingServer.GetVideoAdapterName() + " " + RenderingServer.GetVideoAdapterVendor();
+            n = n.ToLowerInvariant();
+            return n.Contains("llvmpipe") || n.Contains("swiftshader") || n.Contains("softpipe")
+                || n.Contains("microsoft basic render");
+        }
+
         public override void _Ready()
         {
             Instance = this;
             BuildFieldRegistry();
             Load();
+            if (IsSoftwareRenderer())
+                GD.PrintErr("Blood Dragon: software GPU (", RenderingServer.GetVideoAdapterName(),
+                    "). MSAA/SSAO/shadows clamped for Linux VM performance.");
         }
 
         // ──────────────────────────────────────────────────────────────────
@@ -211,14 +223,16 @@ namespace BloodDragon
             if (!Current.Fullscreen)
                 DisplayServer.WindowSetSize(Current.Resolution);
 
-            DisplayServer.WindowSetVsyncMode(Current.VSync
+            bool software = IsSoftwareRenderer();
+            DisplayServer.WindowSetVsyncMode((Current.VSync || software)
                 ? DisplayServer.VSyncMode.Enabled
                 : DisplayServer.VSyncMode.Disabled);
 
             var win = (SceneTree)Engine.GetMainLoop() is { } tree ? tree.Root : null;
             if (win != null)
             {
-                win.Msaa3D = Current.Msaa switch
+                int msaa = software ? 0 : Current.Msaa;
+                win.Msaa3D = msaa switch
                 {
                     2 => Viewport.Msaa.Msaa2X,
                     4 => Viewport.Msaa.Msaa4X,
