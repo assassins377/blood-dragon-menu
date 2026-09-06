@@ -18,7 +18,6 @@ namespace BloodDragon
         private Label _cursor;
         private VBoxContainer _list;
         private Control _attract;
-        private NavBar _nav;
         private enum Page { Root, Campaign }
         private Page _page = Page.Root;
 
@@ -33,9 +32,6 @@ namespace BloodDragon
 
             BuildTitle();
             BuildList();
-            _nav = MenuOverlay.MakeNavBar();
-            _nav.SetHints(select: false, back: false);
-            AddChild(_nav);
             MenuOverlay.AddCrt(this);
             AudioManager.Instance?.StartMenuMusic();
 
@@ -104,7 +100,6 @@ namespace BloodDragon
         private void ShowAttract()
         {
             _list.Visible = false;
-            _nav.SetHints(select: true, back: false);
             _attract = new Control();
             _attract.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
             _attract.MouseFilter = MouseFilterEnum.Stop;
@@ -131,7 +126,6 @@ namespace BloodDragon
         private void ShowRoot(bool animate)
         {
             _page = Page.Root;
-            _nav.SetHints(select: true, back: false);
             FillList(new (string Label, System.Action OnPress)[]
             {
                 ("Кампания", OnCampaignMenu),
@@ -149,7 +143,6 @@ namespace BloodDragon
         private void ShowCampaign()
         {
             _page = Page.Campaign;
-            _nav.SetHints(select: true, back: true);
             FillList(new (string Label, System.Action OnPress)[]
             {
                 ("Новая игра", StartGame),

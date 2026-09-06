@@ -113,10 +113,6 @@ namespace BloodDragon
             back.CustomMinimumSize = new Vector2(220, 48);
             back.Pressed += OnBack;
             bottom.AddChild(back);
-
-            var nav = MenuOverlay.MakeNavBar(BoxContainer.AlignmentMode.Begin);
-            nav.SetHints(select: true, back: true);
-            AddChild(nav);
         }
 
         private void BuildCategories()
