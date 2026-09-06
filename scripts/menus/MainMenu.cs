@@ -21,11 +21,11 @@ namespace BloodDragon
             AddChild(bg);
 
             BuildTitle();
-            BuildMenu();
+            var buttons = BuildMenu();
             MenuOverlay.AddCrt(this);
             AudioManager.Instance?.StartMenuMusic();
 
-            AnimateFadeIn();
+            AnimateFadeIn(buttons);
         }
 
         private void BuildTitle()
@@ -49,7 +49,7 @@ namespace BloodDragon
             AddChild(timer);
         }
 
-        private void BuildMenu()
+        private Button[] BuildMenu()
         {
             var vbox = new VBoxContainer();
             vbox.Position = new Vector2(80, 260);
@@ -60,8 +60,9 @@ namespace BloodDragon
             var campaign = MenuOverlay.MakeMenuButton("Кампания");
             var settings = MenuOverlay.MakeMenuButton("Справка и параметры");
             var quit = MenuOverlay.MakeMenuButton("Выйти из игры");
+            var buttons = new[] { campaign, settings, quit };
 
-            foreach (var b in new[] { campaign, settings, quit })
+            foreach (var b in buttons)
             {
                 b.CustomMinimumSize = new Vector2(500, 52);
                 vbox.AddChild(b);
@@ -72,6 +73,7 @@ namespace BloodDragon
             quit.Pressed += () => { AudioManager.Instance?.PlaySelect(); GetTree().Quit(); };
 
             campaign.GrabFocus();
+            return buttons;
         }
 
         private void OnCampaign()
@@ -87,10 +89,26 @@ namespace BloodDragon
             GetTree().ChangeSceneToFile("res://scenes/settings_menu/SettingsMenu.tscn");
         }
 
-        private void AnimateFadeIn()
+        private void AnimateFadeIn(Button[] buttons)
         {
             Modulate = new Color(1, 1, 1, 0);
-            CreateTween().TweenProperty(this, "modulate:a", 1.0f, 0.3f);
+            var tween = CreateTween().SetParallel();
+            tween.TweenProperty(this, "modulate:a", 1.0f, 0.3f);
+
+            // Godot 4.7: offset transforms survive VBoxContainer layout, so the
+            // slide-in is visual-only and does not steal hover hitboxes.
+            float delay = 0f;
+            foreach (var b in buttons)
+            {
+                b.OffsetTransformEnabled = true;
+                b.OffsetTransformVisualOnly = true;
+                b.OffsetTransformPosition = new Vector2(-72, 0);
+                tween.TweenProperty(b, "offset_transform_position", Vector2.Zero, 0.28f)
+                    .SetDelay(delay)
+                    .SetTrans(Tween.TransitionType.Sine)
+                    .SetEase(Tween.EaseType.Out);
+                delay += 0.05f;
+            }
         }
     }
 }

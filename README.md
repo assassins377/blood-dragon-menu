@@ -1,17 +1,17 @@
 # Blood Dragon Menu
 
-Главное меню и экран «Справка и параметры» в стиле Far Cry 3: Blood Dragon для **Godot 4.6 .NET (C#)**.
+Главное меню и экран «Справка и параметры» в стиле Far Cry 3: Blood Dragon для **Godot 4.7 .NET (C#)**.
 
 Спецификация: [`game_menu_specification.md`](game_menu_specification.md).
 
 ## Требования
 
-- Godot **4.6** с поддержкой .NET
+- Godot **4.7** (.NET / C#), рекомендуется **4.7.2**
 - **.NET 8** SDK
 
 ## Запуск
 
-1. Откройте папку проекта в Godot 4.6 (.NET).
+1. Откройте папку проекта в Godot 4.7 (.NET).
 2. Дождитесь восстановления NuGet / сборки C#.
 3. Запустите сцену `scenes/main_menu/MainMenu.tscn` (она же главная сцена проекта).
 
