@@ -9,4 +9,5 @@ namespace BloodDragon
     public enum SsaoMethod      { Off, Ssao, HbaoPlus }
     public enum AlphaToCoverage { Off, Standard, Extended }
     public enum DifficultyLevel { Easy, Normal, Hard, Nightmare }
+    public enum StatsMode       { Off, Compact, Full }
 }

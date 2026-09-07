@@ -112,6 +112,10 @@ namespace BloodDragon
             Str("language", "voice_language", () => Current.VoiceLanguage, v => Current.VoiceLanguage = v);
             Str("language", "subtitle_language", () => Current.SubtitleLanguage, v => Current.SubtitleLanguage = v);
             E("language", "font", () => Current.FontSize, v => Current.FontSize = v);
+
+            // Performance monitoring
+            B("stats", "show", () => Current.ShowStats, v => Current.ShowStats = v);
+            E("stats", "mode", () => Current.StatsMode, v => Current.StatsMode = v);
         }
 
         // ──────────────────────────────────────────────────────────────────

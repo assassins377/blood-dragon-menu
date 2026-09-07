@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 SettingsManager="*res://scripts/settings/SettingsManager.cs"
 AudioManager="*res://scripts/audio/AudioManager.cs"
+StatsOverlay="*res://scripts/ui/StatsOverlay.cs"
 
 [display]
 

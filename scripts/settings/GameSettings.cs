@@ -80,6 +80,10 @@ namespace BloodDragon
         public string SubtitleLanguage { get; set; } = "ru";
         public FontSize FontSize { get; set; } = FontSize.Standard;
 
+        // ── Performance monitoring (МОНИТОРИНГ) ──────────────────────────
+        public bool ShowStats { get; set; } = false;
+        public StatsMode StatsMode { get; set; } = StatsMode.Compact;
+
         /// <summary>
         /// Deep copy — used both for the settings menu's "pending changes" buffer and
         /// to commit those changes back. <see cref="MemberwiseClone"/> copies every field

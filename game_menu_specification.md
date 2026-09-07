@@ -239,6 +239,25 @@
 
 Информационная панель (RichTextLabel, read-only):
 
+#### 10. 📊 МОНИТОРИНГ
+
+Отображаемое название: **МОНИТОРИНГ**
+
+| Настройка (label) | Тип строки | C# тип | По умолчанию |
+|-------------------|-----------|---------|--------------|
+| ПОКАЗЫВАТЬ СТАТИСТИКУ | CycleOption (bool) | `bool` | ВЫКЛ |
+| РЕЖИМ СТАТИСТИКИ | CycleOption | `StatsMode` (enum) | КОМПАКТНЫЙ |
+
+Строка «РЕЖИМ СТАТИСТИКИ» блокируется, пока ПОКАЗЫВАТЬ СТАТИСТИКУ = ВЫКЛ.
+Под строками — пояснение (Label, TextDisabled): список выводимых метрик.
+
+**Оверлей** (autoload `StatsOverlay`, CanvasLayer=90, выше игровых сцен, ниже CRT=100):
+- КОМПАКТНЫЙ: `FPS 60 | 16.6 МС | ДРАВЕРЫ 128` (одна строка)
+- ПОДРОБНЫЙ: 4 строки — FPS/frametime; draw calls/объекты/треугольники; видео-/буферная/текстурная память (МБ); узлы/осамые/компиляции шейдеров
+- Обновление: Timer 0.5 c (движок обновляет TIME_FPS раз в секунду)
+- Метрики берутся из `Performance` singleton (`GetMonitor`); значения, которые текущий рендерер не отчитывает (например, VRAM на Compatibility), показываются как Н/Д
+- Стиль: моноширинный шрифт темы, неоново-зелёный с чёрной обводкой, позиция (24, 24), MouseFilter=Ignore (не перехватывает клики)
+
 | Поле | Содержимое |
 |------|------------|
 | Название игры | BLOOD DRAGON |
@@ -341,6 +360,10 @@ ui_language="ru"
 voice_language="ru"
 subtitle_language="ru"
 font="standard"
+
+[stats]
+show=false
+mode="compact"
 ```
 
 ---
@@ -379,7 +402,8 @@ font="standard"
 | `RenderingServer` | Качество графики |
 | `Environment` | Post-processing, яркость, glow |
 | `Tween` | Анимации появления/перехода |
-| `Timer` | Мигающий курсор |
+| `Timer` | Мигающий курсор; обновление оверлея мониторинга |
+| `Performance` | Мониторы FPS/frametime/draw calls/памяти для оверлея |
 | `SceneTree` | Смена сцен, `Quit()` |
 
 ---
@@ -1132,7 +1156,9 @@ scenes/
 │       ├── ManualPanel.tscn              # РУКОВОДСТВО (новая)
 │       ├── ManualPanel.cs
 │       ├── CreditsSettingsPanel.tscn
-│       └── CreditsSettingsPanel.cs
+│       ├── CreditsSettingsPanel.cs
+│       ├── PerformanceStatsPanel.tscn    # МОНИТОРИНГ (новая)
+│       └── PerformanceStatsPanel.cs
 │
 └── ui_components/
     ├── MenuButton.tscn                   # Кнопка категории: зелёная заливка при hover/focus

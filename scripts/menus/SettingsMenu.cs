@@ -22,6 +22,7 @@ namespace BloodDragon
             ("cat.audio",            "res://scenes/settings_menu/categories/AudioSettingsPanel.tscn"),
             ("cat.manual",           "res://scenes/settings_menu/categories/ManualPanel.tscn"),
             ("cat.credits",          "res://scenes/settings_menu/categories/CreditsSettingsPanel.tscn"),
+            ("cat.stats",            "res://scenes/settings_menu/categories/PerformanceStatsPanel.tscn"),
         };
 
         private GameSettings _pending;
