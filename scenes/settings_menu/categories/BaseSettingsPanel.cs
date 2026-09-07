@@ -11,8 +11,8 @@ namespace BloodDragon
     /// </summary>
     public abstract partial class BaseSettingsPanel : Control
     {
-        protected static readonly string[] OnOff = { "ВКЛ", "ВЫКЛ" };
-        protected static readonly string[] Quality = { "НИЗКОЕ", "СРЕДНЕЕ", "ВЫСОКОЕ" };
+        protected static readonly string[] OnOff = { "val.on", "val.off" };
+        protected static readonly string[] Quality = { "val.low", "val.medium", "val.high" };
 
         protected GameSettings Pending;
         private bool _built;
@@ -56,7 +56,7 @@ namespace BloodDragon
 
         protected CycleOption Cycle(string label, string[] opts, int index, Action<int> onChange)
         {
-            var row = new CycleOption(label, opts, index);
+            var row = new CycleOption(label, opts, index) { LocalizedOptions = true };
             row.ValueChanged += idx => onChange(idx);
             return row;
         }
@@ -66,7 +66,7 @@ namespace BloodDragon
 
         protected SliderRow Percent(string label, float value, Action<float> onChange)
         {
-            var s = new SliderRow(label, 0, 100, 1, value * 100, "F0", "%");
+            var s = new SliderRow(label, 0, 100, 1, value * 100, "F0", "%") { LocalizedLabel = true };
             s.ValueChanged += v => onChange((float)(v / 100.0));
             return s;
         }

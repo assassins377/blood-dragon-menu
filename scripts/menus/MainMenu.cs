@@ -10,7 +10,7 @@ namespace BloodDragon
     /// </summary>
     public partial class MainMenu : Control
     {
-        private const string Title = "BLOOD DRAGON 1.0 ";
+        private const string Title = "menu.title";
 
         /// <summary>Once the attract screen is dismissed, stay dismissed for this session.</summary>
         private static bool AttractDone;
@@ -105,7 +105,7 @@ namespace BloodDragon
             _attract.MouseFilter = MouseFilterEnum.Stop;
             AddChild(_attract);
 
-            var prompt = MenuTheme.MakeLabel("НАЖМИТЕ ЛЮБУЮ КЛАВИШУ", 28);
+            var prompt = MenuTheme.MakeLabel("menu.press_any_key", 28);
             prompt.HorizontalAlignment = HorizontalAlignment.Center;
             prompt.SetAnchorsAndOffsetsPreset(LayoutPreset.Center);
             prompt.OffsetTop = 80;
@@ -128,9 +128,9 @@ namespace BloodDragon
             _page = Page.Root;
             FillList(new (string Label, System.Action OnPress)[]
             {
-                ("Кампания", OnCampaignMenu),
-                ("Справка и параметры", OnSettings),
-                ("Выйти из игры", () => { AudioManager.Instance?.PlaySelect(); GetTree().Quit(); }),
+                ("menu.campaign", OnCampaignMenu),
+                ("menu.settings", OnSettings),
+                ("menu.quit", () => { AudioManager.Instance?.PlaySelect(); GetTree().Quit(); }),
             }, animate);
         }
 
@@ -145,10 +145,10 @@ namespace BloodDragon
             _page = Page.Campaign;
             FillList(new (string Label, System.Action OnPress)[]
             {
-                ("Новая игра", StartGame),
-                ("Продолжить игру", StartGame),
-                ("Загрузить игру", StartGame),
-                ("Назад", () => { AudioManager.Instance?.PlaySelect(); ShowRoot(animate: true); }),
+                ("menu.new_game", StartGame),
+                ("menu.continue", StartGame),
+                ("menu.load_game", StartGame),
+                ("menu.back", () => { AudioManager.Instance?.PlaySelect(); ShowRoot(animate: true); }),
             }, animate: true);
         }
 

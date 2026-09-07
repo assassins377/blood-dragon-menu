@@ -9,10 +9,10 @@ namespace BloodDragon
         {
             var rows = new List<Control>
             {
-                Cycle("СЛОЖНОСТЬ", new[] { "ЛЁГКАЯ", "НОРМАЛЬНАЯ", "СЛОЖНАЯ", "КОШМАР" },
+                Cycle("set.difficulty", new[] { "val.easy", "val.normal", "val.hard", "val.nightmare" },
                     (int)Pending.Difficulty, i => Pending.Difficulty = (DifficultyLevel)i),
-                BoolCycle("ПОДСКАЗКИ", Pending.Hints, v => Pending.Hints = v),
-                BoolCycle("АВТОПРИЦЕЛИВАНИЕ", Pending.AutoAim, v => Pending.AutoAim = v),
+                BoolCycle("set.hints", Pending.Hints, v => Pending.Hints = v),
+                BoolCycle("set.auto_aim", Pending.AutoAim, v => Pending.AutoAim = v),
             };
             Scroll(rows);
         }

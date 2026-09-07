@@ -32,7 +32,7 @@ namespace BloodDragon
         {
             var l = new Label
             {
-                Text = upper ? text.ToUpper() : text,
+                Text = upper ? Localization.T(text).ToUpper() : Localization.T(text),
                 VerticalAlignment = VerticalAlignment.Center,
             };
             l.AddThemeFontOverride("font", Mono);

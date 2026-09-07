@@ -13,6 +13,7 @@ namespace BloodDragon
         public Vector2I Resolution { get; set; } = new(1600, 900);
         public bool Fullscreen { get; set; } = false;
         public bool VSync { get; set; } = false;
+        public int FpsLimit { get; set; } = 60;
         public int GpuFramesInFlight { get; set; } = 4;
         public bool Letterbox { get; set; } = true;
         public DirectXVersion DirectX { get; set; } = DirectXVersion.DirectX11;

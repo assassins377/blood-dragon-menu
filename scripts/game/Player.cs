@@ -13,19 +13,24 @@ namespace BloodDragon
         private const float JumpVelocity = 7.5f;
         private const float WalkSpeed = 5f;
         private const float SprintSpeed = 8.5f;
+        private const float CrouchSpeed = 2.5f;
+        private const float StandHeight = 1.8f;
+        private const float CrouchHeight = 1.0f;
 
         public Camera3D Camera { get; private set; }
         private Node3D _head;
+        private CollisionShape3D _capsule;
         private float _pitch;
+        private bool _crouching;
 
         public override void _Ready()
         {
-            var capsule = new CollisionShape3D
+            _capsule = new CollisionShape3D
             {
-                Shape = new CapsuleShape3D { Height = 1.8f, Radius = 0.35f },
+                Shape = new CapsuleShape3D { Height = StandHeight, Radius = 0.35f },
                 Position = new Vector3(0, 0.9f, 0),
             };
-            AddChild(capsule);
+            AddChild(_capsule);
 
             _head = new Node3D { Position = new Vector3(0, 1.6f, 0) };
             AddChild(_head);
@@ -71,15 +76,27 @@ namespace BloodDragon
         {
             if (GetTree().Paused) return;
 
+            bool wantCrouch = Input.IsActionPressed("crouch");
+            if (wantCrouch != _crouching)
+            {
+                _crouching = wantCrouch;
+                float h = _crouching ? CrouchHeight : StandHeight;
+                ((CapsuleShape3D)_capsule.Shape).Height = h;
+                _capsule.Position = new Vector3(0, h / 2f, 0);
+                _head.Position = new Vector3(0, _crouching ? 0.9f : 1.6f, 0);
+            }
+
             Vector3 v = Velocity;
             if (!IsOnFloor())
                 v.Y -= Gravity * (float)delta;
-            else if (Input.IsActionJustPressed("jump"))
+            else if (Input.IsActionJustPressed("jump") && !_crouching)
                 v.Y = JumpVelocity;
 
             Vector2 input = Input.GetVector("move_left", "move_right", "move_forward", "move_backward");
             Vector3 dir = (Transform.Basis * new Vector3(input.X, 0, input.Y)).Normalized();
-            float speed = Input.IsActionPressed("sprint") ? SprintSpeed : WalkSpeed;
+            float speed = _crouching ? CrouchSpeed
+                       : Input.IsActionPressed("sprint") ? SprintSpeed
+                       : WalkSpeed;
 
             if (dir != Vector3.Zero)
             {

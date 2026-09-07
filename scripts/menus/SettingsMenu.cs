@@ -13,15 +13,15 @@ namespace BloodDragon
     {
         private static readonly (string Name, string Scene)[] Categories =
         {
-            ("ИЗОБРАЖЕНИЕ",          "res://scenes/settings_menu/categories/DisplaySettingsPanel.tscn"),
-            ("КАЛИБРОВКА",          "res://scenes/settings_menu/categories/CalibrationSettingsPanel.tscn"),
-            ("КАЧЕСТВО ВИДЕО",      "res://scenes/settings_menu/categories/VideoQualitySettingsPanel.tscn"),
-            ("ЭЛЕМЕНТЫ УПРАВЛЕНИЯ", "res://scenes/settings_menu/categories/InputSettingsPanel.tscn"),
-            ("ИГРОВОЙ ПРОЦЕСС",     "res://scenes/settings_menu/categories/GameplaySettingsPanel.tscn"),
-            ("ЯЗЫК",                "res://scenes/settings_menu/categories/LanguageSettingsPanel.tscn"),
-            ("ЗВУК",                "res://scenes/settings_menu/categories/AudioSettingsPanel.tscn"),
-            ("РУКОВОДСТВО",         "res://scenes/settings_menu/categories/ManualPanel.tscn"),
-            ("ТИТРЫ",               "res://scenes/settings_menu/categories/CreditsSettingsPanel.tscn"),
+            ("cat.display",          "res://scenes/settings_menu/categories/DisplaySettingsPanel.tscn"),
+            ("cat.calibration",      "res://scenes/settings_menu/categories/CalibrationSettingsPanel.tscn"),
+            ("cat.video_quality",    "res://scenes/settings_menu/categories/VideoQualitySettingsPanel.tscn"),
+            ("cat.controls",         "res://scenes/settings_menu/categories/InputSettingsPanel.tscn"),
+            ("cat.gameplay",         "res://scenes/settings_menu/categories/GameplaySettingsPanel.tscn"),
+            ("cat.language",         "res://scenes/settings_menu/categories/LanguageSettingsPanel.tscn"),
+            ("cat.audio",            "res://scenes/settings_menu/categories/AudioSettingsPanel.tscn"),
+            ("cat.manual",           "res://scenes/settings_menu/categories/ManualPanel.tscn"),
+            ("cat.credits",          "res://scenes/settings_menu/categories/CreditsSettingsPanel.tscn"),
         };
 
         private GameSettings _pending;
@@ -67,7 +67,7 @@ namespace BloodDragon
             root.AddThemeConstantOverride("separation", 18);
             margin.AddChild(root);
 
-            var heading = MenuTheme.MakeLabel("СПРАВКА И ПАРАМЕТРЫ", 34);
+            var heading = MenuTheme.MakeLabel("menu.settings_title", 34);
             heading.AddThemeColorOverride("font_color", MenuTheme.Accent);
             root.AddChild(heading);
 
@@ -104,12 +104,12 @@ namespace BloodDragon
             bottom.AddThemeConstantOverride("separation", 16);
             root.AddChild(bottom);
 
-            var accept = MenuOverlay.MakeMenuButton("Принять", 26);
+            var accept = MenuOverlay.MakeMenuButton("menu.accept", 26);
             accept.CustomMinimumSize = new Vector2(220, 48);
             accept.Pressed += OnAccept;
             bottom.AddChild(accept);
 
-            var back = MenuOverlay.MakeMenuButton("Назад", 26);
+            var back = MenuOverlay.MakeMenuButton("menu.back", 26);
             back.CustomMinimumSize = new Vector2(220, 48);
             back.Pressed += OnBack;
             bottom.AddChild(back);
@@ -136,13 +136,14 @@ namespace BloodDragon
 
         private void SelectCategory(string name)
         {
-            _panelHeader.Text = name;
+            string display = Localization.T(name).ToUpper();
+            _panelHeader.Text = display;
             foreach (var kv in _panels)
                 kv.Value.Visible = kv.Key == name;
 
             foreach (var b in _categoryButtons)
             {
-                bool sel = b.Text == name;
+                bool sel = b.Text == display;
                 b.AddThemeStyleboxOverride("normal",
                     MenuOverlay.ButtonStylebox(sel ? MenuTheme.Accent : MenuTheme.Transparent));
                 b.AddThemeColorOverride("font_color", sel ? MenuTheme.TextActive : MenuTheme.TextNormal);

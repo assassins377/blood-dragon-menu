@@ -1,4 +1,5 @@
 using Godot;
+using System.Linq;
 
 namespace BloodDragon
 {
@@ -26,14 +27,21 @@ namespace BloodDragon
             BuildPauseMenu();
 
             ApplyGraphics();
+            ApplyAlphaToCoverage();
             if (SettingsManager.Instance != null)
+            {
                 SettingsManager.Instance.Applied += ApplyGraphics;
+                SettingsManager.Instance.Applied += ApplyAlphaToCoverage;
+            }
         }
 
         public override void _ExitTree()
         {
             if (SettingsManager.Instance != null)
+            {
                 SettingsManager.Instance.Applied -= ApplyGraphics;
+                SettingsManager.Instance.Applied -= ApplyAlphaToCoverage;
+            }
         }
 
         private void ApplyGraphics()
@@ -111,6 +119,24 @@ namespace BloodDragon
             return m;
         }
 
+        /// <summary>Applies the ALPHA TO COVERAGE setting to every arena material.</summary>
+        private void ApplyAlphaToCoverage()
+        {
+            var s = SettingsManager.Instance?.Current;
+            if (s == null) return;
+
+            var mode = s.AlphaToCoverage switch
+            {
+                AlphaToCoverage.Standard => BaseMaterial3D.AlphaAntiAliasing.AlphaToCoverage,
+                AlphaToCoverage.Extended => BaseMaterial3D.AlphaAntiAliasing.AlphaToCoverageAndToOne,
+                _ => BaseMaterial3D.AlphaAntiAliasing.Off,
+            };
+
+            foreach (var mi in GetChildren().OfType<MeshInstance3D>())
+                if (mi.MaterialOverride is StandardMaterial3D mat)
+                    mat.AlphaAntialiasingMode = mode;
+        }
+
         private void BuildPlayer()
         {
             _player = new Player { Position = new Vector3(0, 2, 8) };
@@ -129,7 +155,7 @@ namespace BloodDragon
             cross.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.Center);
             layer.AddChild(cross);
 
-            var hint = MenuTheme.MakeLabel("WASD — движение   SHIFT — бег   ПРОБЕЛ — прыжок   ESC — пауза", 18);
+            var hint = MenuTheme.MakeLabel("game.hint", 18);
             hint.Position = new Vector2(40, 30);
             layer.AddChild(hint);
         }
@@ -163,17 +189,17 @@ namespace BloodDragon
             vbox.AddThemeConstantOverride("separation", 16);
             _pauseLayer.AddChild(vbox);
 
-            var title = MenuTheme.MakeLabel("ПАУЗА", 40);
+            var title = MenuTheme.MakeLabel("menu.pause", 40);
             title.AddThemeColorOverride("font_color", MenuTheme.Accent);
             title.HorizontalAlignment = HorizontalAlignment.Center;
             vbox.AddChild(title);
 
-            var resume = MenuOverlay.MakeMenuButton("Продолжить", 26);
+            var resume = MenuOverlay.MakeMenuButton("menu.resume", 26);
             resume.CustomMinimumSize = new Vector2(420, 50);
             resume.Pressed += () => { AudioManager.Instance?.PlaySelect(); SetPaused(false); };
             vbox.AddChild(resume);
 
-            var toMenu = MenuOverlay.MakeMenuButton("В главное меню", 26);
+            var toMenu = MenuOverlay.MakeMenuButton("menu.to_main_menu", 26);
             toMenu.CustomMinimumSize = new Vector2(420, 50);
             toMenu.Pressed += OnQuitToMenu;
             vbox.AddChild(toMenu);

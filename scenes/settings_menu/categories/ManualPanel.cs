@@ -5,16 +5,12 @@ namespace BloodDragon
         protected override void Build()
         {
             RichPage(
-                "[b]УПРАВЛЕНИЕ[/b]\n"
-              + "WASD — движение, ПРОБЕЛ — прыжок, SHIFT — бег, CTRL — присесть\n"
-              + "ЛКМ — стрельба, ПКМ — прицеливание, R — перезарядка, E — взаимодействие\n\n"
-              + "[b]МЕХАНИКИ[/b]\n"
-              + "Исследуйте уровни, собирайте ресурсы и сражайтесь с драконами.\n"
-              + "Используйте укрытия и перезаряжайтесь вовремя.\n\n"
-              + "[b]СОВЕТЫ[/b]\n"
-              + "• Цельтесь в слабые точки врага.\n"
-              + "• Сохраняйте патроны для сильных противников.\n"
-              + "• Изучите карту перед сражением.");
+                $"[b]{Localization.T("manual.controls")}[/b]\n"
+              + Localization.T("manual.controls_body") + "\n\n"
+              + $"[b]{Localization.T("manual.mechanics")}[/b]\n"
+              + Localization.T("manual.mechanics_body") + "\n\n"
+              + $"[b]{Localization.T("manual.tips")}[/b]\n"
+              + Localization.T("manual.tips_body"));
         }
     }
 }

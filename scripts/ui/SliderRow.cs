@@ -28,6 +28,9 @@ namespace BloodDragon
             _format = format; _suffix = suffix;
         }
 
+        /// <summary>True when the label is a localization key, not display text.</summary>
+        public bool LocalizedLabel { get; set; }
+
         public double Value => _slider?.Value ?? _initial;
 
         public override void _Ready()
@@ -77,7 +80,8 @@ namespace BloodDragon
         private void UpdateLabel()
         {
             string v = _slider.Value.ToString(_format, System.Globalization.CultureInfo.InvariantCulture);
-            _name.Text = $"{_labelText} : {v}{_suffix}".ToUpper();
+            string label = LocalizedLabel ? Localization.T(_labelText) : _labelText;
+            _name.Text = $"{label} : {v}{_suffix}".ToUpper();
         }
 
         private void UpdateVisuals()

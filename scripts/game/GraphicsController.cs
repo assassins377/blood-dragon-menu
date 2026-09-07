@@ -73,8 +73,9 @@ namespace BloodDragon
 
             // No runtime API in Godot (documented, applied elsewhere or restart-only):
             //   DirectX (render backend, startup), GpuFramesInFlight (startup),
-            //   AlphaToCoverage (per-material), TextureQuality / WaterQuality
-            //   (no textured/water assets here), AudioOutput (speaker mode, startup).
+            //   TextureQuality / WaterQuality (no textured/water assets here),
+            //   AudioOutput (speaker mode, startup).
+            // Applied elsewhere: FpsLimit (SettingsManager), AlphaToCoverage (Game).
         }
     }
 }

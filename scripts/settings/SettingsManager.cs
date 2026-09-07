@@ -63,6 +63,7 @@ namespace BloodDragon
             I("display", "resolution_y", () => Current.Resolution.Y, v => Current.Resolution = new Vector2I(Current.Resolution.X, v));
             B("display", "fullscreen", () => Current.Fullscreen, v => Current.Fullscreen = v);
             B("display", "vsync", () => Current.VSync, v => Current.VSync = v);
+            I("display", "fps_limit", () => Current.FpsLimit, v => Current.FpsLimit = v);
             I("display", "gpu_frames_in_flight", () => Current.GpuFramesInFlight, v => Current.GpuFramesInFlight = v);
             B("display", "letterbox", () => Current.Letterbox, v => Current.Letterbox = v);
             E("display", "directx", () => Current.DirectX, v => Current.DirectX = v);
@@ -156,8 +157,12 @@ namespace BloodDragon
                 f.Set(cfg.GetValue(f.Section, f.Key, f.Get()));
 
             foreach (var action in new List<string>(Current.KeyBindings.Keys))
-                Current.KeyBindings[action] =
-                    cfg.GetValue("controls", "key_" + action, Current.KeyBindings[action]).AsString();
+            {
+                string saved = cfg.GetValue("controls", "key_" + action, Current.KeyBindings[action]).AsString();
+                // A corrupt/unknown key string would silently drop the action's events;
+                // fall back to the model default instead.
+                Current.KeyBindings[action] = IsValidKeyString(saved) ? saved : Current.KeyBindings[action];
+            }
 
             ApplyAll();
         }
@@ -188,7 +193,6 @@ namespace BloodDragon
                     InputMap.ActionAddEvent(kv.Key, ev);
             }
         }
-
         private static InputEvent KeyStringToEvent(string s)
         {
             switch (s)
@@ -213,6 +217,13 @@ namespace BloodDragon
             return new InputEventKey { PhysicalKeycode = key, Keycode = key };
         }
 
+        /// <summary>True when the stored key string maps to a real key or mouse button.</summary>
+        public static bool IsValidKeyString(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return false;
+            return KeyStringToEvent(s) != null;
+        }
+
         public void ApplyDisplay()
         {
             DisplayServer.WindowSetMode(Current.Fullscreen
@@ -227,6 +238,7 @@ namespace BloodDragon
             DisplayServer.WindowSetVsyncMode((Current.VSync || software)
                 ? DisplayServer.VSyncMode.Enabled
                 : DisplayServer.VSyncMode.Disabled);
+            Engine.MaxFps = Current.FpsLimit;
 
             var win = (SceneTree)Engine.GetMainLoop() is { } tree ? tree.Root : null;
             if (win != null)

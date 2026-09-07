@@ -30,8 +30,13 @@ namespace BloodDragon
             _index = Mathf.Clamp(defaultIndex, 0, Math.Max(0, _options.Count - 1));
         }
 
+        /// <summary>True when the option strings are localization keys, not display text.</summary>
+        public bool LocalizedOptions { get; set; }
+
         public int CurrentIndex => _index;
-        public string CurrentValue => _options.Count > 0 ? _options[_index] : "";
+        public string CurrentValue => _options.Count > 0 ? Display(_options[_index]) : "";
+
+        private string Display(string raw) => LocalizedOptions ? Localization.T(raw) : raw;
 
         public override void _Ready()
         {
@@ -57,8 +62,7 @@ namespace BloodDragon
             hbox.AddChild(_name);
 
             _left = MenuTheme.MakeLabel("◄", 22, false);
-            _value = MenuTheme.MakeLabel(CurrentValue, 22, false);
-            _value.HorizontalAlignment = HorizontalAlignment.Right;
+            _value = MenuTheme.MakeLabel(CurrentValue, 22, false);            _value.HorizontalAlignment = HorizontalAlignment.Right;
             _value.CustomMinimumSize = new Vector2(170, 0);
             _right = MenuTheme.MakeLabel("►", 22, false);
             hbox.AddChild(_left);
@@ -105,8 +109,7 @@ namespace BloodDragon
 
         private void UpdateVisuals()
         {
-            if (_value != null) _value.Text = CurrentValue;
-            if (_bg == null) return;
+            if (_value != null) _value.Text = CurrentValue;            if (_bg == null) return;
 
             bool focused = HasFocus() && !_disabled;
             Color text = _disabled ? MenuTheme.TextDisabled

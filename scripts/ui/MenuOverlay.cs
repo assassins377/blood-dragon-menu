@@ -42,7 +42,7 @@ namespace BloodDragon
         {
             var b = new Button
             {
-                Text = text.ToUpper(),
+                Text = Localization.T(text).ToUpper(),
                 Alignment = HorizontalAlignment.Left,
                 FocusMode = Control.FocusModeEnum.All,
             };

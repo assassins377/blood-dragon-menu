@@ -14,9 +14,9 @@ namespace BloodDragon
         private static readonly string[] SubtitleIds = { "off", "ru", "en", "de", "fr", "es", "it", "ja", "zh" };
         private static readonly string[] SubtitleLabels =
         {
-            "ВЫКЛ", "РУССКИЙ", "ENGLISH", "DEUTSCH", "FRANÇAIS", "ESPAÑOL", "ITALIANO", "日本語", "中文",
+            "val.off_sub", "РУССКИЙ", "ENGLISH", "DEUTSCH", "FRANÇAIS", "ESPAÑOL", "ITALIANO", "日本語", "中文",
         };
-        private static readonly string[] FontLabels = { "СТАНДАРТНЫЙ", "КРУПНЫЙ", "ДОСТУПНЫЙ" };
+        private static readonly string[] FontLabels = { "val.standard_font", "val.large_font", "val.accessibility_font" };
 
         protected override void Build()
         {
@@ -26,10 +26,10 @@ namespace BloodDragon
 
             var rows = new List<Control>
             {
-                Cycle("ЯЗЫК ИНТЕРФЕЙСА", LocaleLabels, ui, i => Pending.UiLanguage = LocaleIds[i]),
-                Cycle("ЯЗЫК ОЗВУЧКИ", LocaleLabels, voice, i => Pending.VoiceLanguage = LocaleIds[i]),
-                Cycle("ЯЗЫК СУБТИТРОВ", SubtitleLabels, sub, i => Pending.SubtitleLanguage = SubtitleIds[i]),
-                Cycle("ШРИФТ", FontLabels, (int)Pending.FontSize, i => Pending.FontSize = (FontSize)i),
+                Cycle("set.ui_language", LocaleLabels, ui, i => Pending.UiLanguage = LocaleIds[i]),
+                Cycle("set.voice_language", LocaleLabels, voice, i => Pending.VoiceLanguage = LocaleIds[i]),
+                Cycle("set.subtitle_language", SubtitleLabels, sub, i => Pending.SubtitleLanguage = SubtitleIds[i]),
+                Cycle("set.font", FontLabels, (int)Pending.FontSize, i => Pending.FontSize = (FontSize)i),
             };
             Scroll(rows);
         }

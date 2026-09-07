@@ -39,7 +39,6 @@ namespace BloodDragon
             _name = MenuTheme.MakeLabel(_display);
             _name.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             hbox.AddChild(_name);
-
             _keyButton = new Button
             {
                 Text = _key,
@@ -56,15 +55,41 @@ namespace BloodDragon
             _keyButton.Text = "...";
         }
 
+        private void CancelCapture()
+        {
+            _capturing = false;
+            _keyButton.Text = _key;
+        }
+
         public override void _Input(InputEvent @event)
         {
             if (!_capturing) return;
 
-            string captured = null;
+            // Esc cancels capture instead of being bound as a key.
             if (@event is InputEventKey k && k.Pressed && !k.Echo)
-                captured = OS.GetKeycodeString(k.PhysicalKeycode != Key.None ? k.PhysicalKeycode : k.Keycode).ToUpper();
-            else if (@event is InputEventMouseButton mb && mb.Pressed)
-                captured = mb.ButtonIndex switch
+            {
+                if (k.PhysicalKeycode == Key.Escape || k.Keycode == Key.Escape)
+                {
+                    CancelCapture();
+                    AcceptEvent();
+                    return;
+                }
+
+                string captured = OS.GetKeycodeString(k.PhysicalKeycode != Key.None ? k.PhysicalKeycode : k.Keycode).ToUpper();
+                if (captured.Length > 0)
+                {
+                    _capturing = false;
+                    _key = captured;
+                    _keyButton.Text = _key;
+                    EmitSignal(SignalName.Rebind, _action, _key);
+                    AcceptEvent();
+                }
+                return;
+            }
+
+            if (@event is InputEventMouseButton mb && mb.Pressed)
+            {
+                string captured = mb.ButtonIndex switch
                 {
                     MouseButton.Left => "MOUSE_LEFT",
                     MouseButton.Right => "MOUSE_RIGHT",
@@ -72,13 +97,14 @@ namespace BloodDragon
                     _ => null,
                 };
 
-            if (captured == null) return;
+                if (captured == null) return;
 
-            _capturing = false;
-            _key = captured;
-            _keyButton.Text = _key;
-            EmitSignal(SignalName.Rebind, _action, _key);
-            AcceptEvent();
+                _capturing = false;
+                _key = captured;
+                _keyButton.Text = _key;
+                EmitSignal(SignalName.Rebind, _action, _key);
+                AcceptEvent();
+            }
         }
     }
 }
