@@ -3,6 +3,8 @@
 /android/
 export.cfg
 export_presets.cfg
+/build/
+BloodDragon.csproj.old
 
 # .NET / C#
 .mono/
