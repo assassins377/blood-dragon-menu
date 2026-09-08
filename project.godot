@@ -28,16 +28,14 @@ window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
-[gui]
-
-theme/default_font_antialiasing=1
-theme/default_font_hinting=2
-theme/default_font_subpixel_positioning=0
-common/snap_controls_to_pixels=true
-
 [dotnet]
 
 project/assembly_name="BloodDragon"
+
+[gui]
+
+theme/default_font_hinting=2
+theme/default_font_subpixel_positioning=0
 
 [input_devices]
 
