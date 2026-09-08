@@ -102,7 +102,7 @@ namespace BloodDragon
                 box.AddChild(new MeshInstance3D
                 {
                     Mesh = new BoxMesh { Size = shape.Size },
-                    MaterialOverride = SolidMaterial(new Color(0.05f, 0.15f, 0.07f), 0.25f),
+                    MaterialOverride = MatteMaterial(new Color(0.16f, 0.30f, 0.19f)),
                 });
                 AddChild(box);
             }
@@ -119,6 +119,10 @@ namespace BloodDragon
             }
             return m;
         }
+
+        /// <summary>Creates a flat non-emissive material so arena blocks stay matte.</summary>
+        private static StandardMaterial3D MatteMaterial(Color albedo)
+            => new() { AlbedoColor = albedo };
 
         /// <summary>Applies the ALPHA TO COVERAGE setting to every arena material.</summary>
         private void ApplyAlphaToCoverage()

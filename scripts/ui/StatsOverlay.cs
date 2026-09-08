@@ -4,16 +4,19 @@ namespace BloodDragon
 {
     /// <summary>
     /// In-game overlay: FPS, frametime, draw calls, memory, nodes.
-    /// Compact = one line; Full = four lines. Lives above the CRT layer.
+    /// Compact = one line; Full = four lines. Lives above the CRT layer,
+    /// top-right so it never overlaps the game hint (top-left).
     /// Refreshes at most 5 Hz while visible and does no work while hidden.
     /// </summary>
     public partial class StatsOverlay : CanvasLayer
     {
         private const float RefreshInterval = 0.2f; // 5 Hz: enough for human reading
+        private const float Margin = 24f;
 
         private Label _label;
         private float _frameMs;
         private float _refreshAccum;
+        private float _sizeCheckAccum;
         private bool _wasShown;
 
         public override void _Ready()
@@ -21,11 +24,10 @@ namespace BloodDragon
             // CRT is layer 100; stats must sit above it or scanlines eat the text.
             Layer = 110;
             ProcessMode = ProcessModeEnum.Always;
-
             _label = new Label
             {
-                Position = new Vector2(24, 24),
                 MouseFilter = Control.MouseFilterEnum.Ignore,
+                HorizontalAlignment = HorizontalAlignment.Right,
             };
             _label.AddThemeFontOverride("font", MenuTheme.Mono);
             _label.AddThemeFontSizeOverride("font_size", 16);
@@ -48,6 +50,14 @@ namespace BloodDragon
 
         public override void _Process(double delta)
         {
+            // Re-anchor cheaply at most once per second; window size rarely changes.
+            _sizeCheckAccum += (float)delta;
+            if (_sizeCheckAccum >= 1f)
+            {
+                _sizeCheckAccum = 0f;
+                SetLabelAnchored();
+            }
+
             var s = SettingsManager.Instance?.Current;
             bool show = s != null && s.ShowStats;
 
@@ -79,6 +89,21 @@ namespace BloodDragon
         }
 
         private void OnSettingsApplied() => Refresh();
+
+        // Top-right anchored: the label grows from the right edge so multiline
+        // text stays clear of the game hint at the top-left.
+        private void SetLabelAnchored()
+        {
+            var vp = GetViewport();
+            float width = vp?.GetVisibleRect().Size.X ?? 1920;
+            _label.AnchorLeft = 1f;
+            _label.AnchorRight = 1f;
+            _label.OffsetLeft = -width + Margin;
+            _label.OffsetRight = -Margin;
+            _label.OffsetTop = Margin;
+        }
+
+        public void OnViewportSizeChanged() => SetLabelAnchored();
 
         private void Refresh()
         {
