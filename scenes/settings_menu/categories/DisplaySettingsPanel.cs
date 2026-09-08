@@ -23,6 +23,7 @@ namespace BloodDragon
             _vsyncRow = BoolCycle("set.vsync", Pending.VSync, v => Pending.VSync = v);
 
             var fov = new SliderRow("set.fov", 60, 120, 0.05, Pending.Fov, "F2") { LocalizedLabel = true };
+            AttachHelp(fov, "set.fov");
             fov.ValueChanged += v => Pending.Fov = (float)v;
 
             var rows = new List<Control>

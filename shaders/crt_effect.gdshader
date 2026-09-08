@@ -15,17 +15,21 @@ float rand(vec2 co) {
 }
 
 void fragment() {
-    // Scanlines: darken on every other line.
-    float line = sin(UV.y * scanline_count * PI) * 0.5 + 0.5;
-    float scan = line * scanline_intensity;
+    float scan = 0.0;
+    if (scanline_intensity > 0.0) {
+        float line = sin(UV.y * scanline_count * PI) * 0.5 + 0.5;
+        scan = line * scanline_intensity;
+    }
 
     // Vignette: 0 in the centre, growing toward the corners.
     vec2 centered = UV - 0.5;
     float vig = smoothstep(vignette_radius - vignette_softness, vignette_radius, length(centered));
 
-    // Animated noise.
-    float noise = (rand(UV + TIME * 0.1) - 0.5) * noise_intensity;
+    // Animated noise — skipped entirely when the intensity is off.
+    float noise = 0.0;
+    if (noise_intensity > 0.0)
+        noise = (rand(UV + TIME * 0.1) - 0.5) * noise_intensity;
 
-    float alpha = clamp(scan + vig * 0.7 + abs(noise), 0.0, 1.0);
-    COLOR = vec4(0.0, 0.0, 0.0, alpha);
+    float alpha = clamp(scan * 0.35 + vig * 0.18 + abs(noise), 0.0, 1.0);
+    COLOR = vec4(0.12, 0.16, 0.12, alpha);
 }

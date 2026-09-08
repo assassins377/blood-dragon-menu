@@ -30,8 +30,17 @@ namespace BloodDragon
         private VBoxContainer _categoryList;
         private Label _panelHeader;
         private Control _panelHost;
+        private Label _hintLabel;
+        private Timer _hintTimer;
+        private Control _detailLayer;
+        private Label _detailTitle;
+        private Label _detailBody;
+        private string _pendingHint = "";
+        private string _pendingDetail = "";
+        private bool _clearHint;
         private readonly Dictionary<string, Control> _panels = new();
         private readonly List<Button> _categoryButtons = new();
+        private Button _selectedCategoryButton;
 
         public override void _Ready()
         {
@@ -44,6 +53,7 @@ namespace BloodDragon
             AddChild(bg);
 
             BuildLayout();
+            BuildHintChrome();
             BuildCategories();
             MenuOverlay.AddCrt(this);
             AudioManager.Instance?.StartMenuMusic();
@@ -101,6 +111,12 @@ namespace BloodDragon
             };
             panelBox.AddChild(_panelHost);
 
+            _hintLabel = MenuTheme.MakeLabel("", 16, false);
+            _hintLabel.AddThemeColorOverride("font_color", MenuTheme.TextDisabled);
+            _hintLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            _hintLabel.CustomMinimumSize = new Vector2(0, 44);
+            panelBox.AddChild(_hintLabel);
+
             var bottom = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
             bottom.AddThemeConstantOverride("separation", 16);
             root.AddChild(bottom);
@@ -118,15 +134,10 @@ namespace BloodDragon
 
         private void BuildCategories()
         {
-            foreach (var (name, scenePath) in Categories)
+            // Panels are instantiated lazily on first select, so entering the
+            // settings screen does not build and localize all ten categories.
+            foreach (var (name, _) in Categories)
             {
-                var scene = GD.Load<PackedScene>(scenePath);
-                var panel = scene.Instantiate<BaseSettingsPanel>();
-                panel.Visible = false;
-                _panelHost.AddChild(panel);
-                panel.Setup(_pending);
-                _panels[name] = panel;
-
                 var btn = MenuOverlay.MakeMenuButton(name, 24);
                 btn.CustomMinimumSize = new Vector2(0, 46);
                 btn.Pressed += () => { AudioManager.Instance?.PlaySelect(); SelectCategory(name); };
@@ -135,21 +146,175 @@ namespace BloodDragon
             }
         }
 
+        private void EnsurePanel(string name)
+        {
+            if (_panels.ContainsKey(name)) return;
+
+            string path = null;
+            foreach (var c in Categories)
+            {
+                if (c.Name == name) { path = c.Scene; break; }
+            }
+            if (path == null) return;
+
+            var scene = GD.Load<PackedScene>(path);
+            var panel = scene.Instantiate<BaseSettingsPanel>();
+            panel.Visible = false;
+            _panelHost.AddChild(panel);
+            panel.Setup(_pending);
+            _panels[name] = panel;
+        }
+
         private void SelectCategory(string name)
         {
+            EnsurePanel(name);
+
             string display = Localization.T(name).ToUpper();
             _panelHeader.Text = display;
             foreach (var kv in _panels)
                 kv.Value.Visible = kv.Key == name;
 
+            // Restyle only the previously and newly selected buttons instead of
+            // rebuilding every category stylebox on each switch.
+            if (_selectedCategoryButton != null)
+            {
+                _selectedCategoryButton.AddThemeStyleboxOverride("normal", MenuOverlay.ButtonStylebox(false));
+                _selectedCategoryButton.AddThemeColorOverride("font_color", MenuTheme.TextNormal);
+            }
+
+            Button next = null;
             foreach (var b in _categoryButtons)
             {
-                bool sel = b.Text == display;
-                b.AddThemeStyleboxOverride("normal",
-                    MenuOverlay.ButtonStylebox(sel ? MenuTheme.Accent : MenuTheme.Transparent));
-                b.AddThemeColorOverride("font_color", sel ? MenuTheme.TextActive : MenuTheme.TextNormal);
+                if (b.Text == display)
+                {
+                    next = b;
+                    b.AddThemeStyleboxOverride("normal", MenuOverlay.ButtonStylebox(true));
+                    b.AddThemeColorOverride("font_color", MenuTheme.TextActive);
+                }
             }
+            _selectedCategoryButton = next;
+
+            ShowHint("", "");
         }
+
+        private void BuildHintChrome()
+        {
+            _hintTimer = new Timer { OneShot = true };
+            _hintTimer.Timeout += FlushHint;
+            AddChild(_hintTimer);
+
+            SettingsHint.Focused += OnHintFocused;
+            SettingsHint.Cleared += OnHintCleared;
+            SettingsHint.DetailRequested += OpenDetail;
+
+            var detailCanvas = new CanvasLayer { Layer = 110 };
+            AddChild(detailCanvas);
+            _detailLayer = new Control { Visible = false };
+            _detailLayer.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+            _detailLayer.MouseFilter = MouseFilterEnum.Stop;
+            detailCanvas.AddChild(_detailLayer);
+
+            var dim = new ColorRect { Color = new Color(0, 0, 0, 0.35f) };
+            dim.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+            dim.GuiInput += e =>
+            {
+                if (e is InputEventMouseButton mb && mb.Pressed)
+                {
+                    CloseDetail();
+                    _detailLayer.AcceptEvent();
+                }
+            };
+            _detailLayer.AddChild(dim);
+
+            var center = new CenterContainer();
+            center.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+            center.MouseFilter = MouseFilterEnum.Ignore;
+            _detailLayer.AddChild(center);
+
+            var card = new PanelContainer { CustomMinimumSize = new Vector2(520, 0) };
+            card.AddThemeStyleboxOverride("panel", MenuTheme.Panel(border: true));
+            center.AddChild(card);
+
+            var box = new VBoxContainer();
+            box.AddThemeConstantOverride("separation", 12);
+            card.AddChild(box);
+
+            _detailTitle = MenuTheme.MakeLabel("", 22);
+            _detailTitle.AddThemeColorOverride("font_color", MenuTheme.Accent);
+            box.AddChild(_detailTitle);
+
+            _detailBody = MenuTheme.MakeLabel("", 18, false);
+            _detailBody.AddThemeColorOverride("font_color", MenuTheme.TextNormal);
+            _detailBody.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            _detailBody.CustomMinimumSize = new Vector2(480, 0);
+            box.AddChild(_detailBody);
+
+            var close = MenuOverlay.MakeMenuButton("menu.back", 22);
+            close.CustomMinimumSize = new Vector2(180, 40);
+            close.Pressed += CloseDetail;
+            box.AddChild(close);
+        }
+
+        public override void _ExitTree()
+        {
+            SettingsHint.Focused -= OnHintFocused;
+            SettingsHint.Cleared -= OnHintCleared;
+            SettingsHint.DetailRequested -= OpenDetail;
+        }
+
+        private void OnHintFocused(string hint, string detail)
+        {
+            _clearHint = false;
+            _pendingHint = hint;
+            _pendingDetail = detail;
+            _hintTimer.Stop();
+            _hintTimer.WaitTime = 0.4;
+            _hintTimer.Start();
+        }
+
+        private void OnHintCleared()
+        {
+            _clearHint = true;
+            _hintTimer.Stop();
+            _hintTimer.WaitTime = 0.12;
+            _hintTimer.Start();
+        }
+
+        private void FlushHint()
+        {
+            if (_clearHint)
+                ShowHint("", "");
+            else
+                ShowHint(_pendingHint, _pendingDetail);
+        }
+
+        private void ShowHint(string hintKey, string detailKey)
+        {
+            if (!Localization.Has(hintKey))
+            {
+                _hintLabel.Text = "";
+                return;
+            }
+
+            string text = Localization.T(hintKey);
+            if (!string.IsNullOrEmpty(detailKey))
+                text += "   [? / F1]";
+            _hintLabel.Text = text;
+        }
+
+        private void OpenDetail(string detailKey)
+        {
+            if (!Localization.Has(detailKey)) return;
+            string id = detailKey.StartsWith("info.") ? detailKey.Substring(5) : detailKey;
+            string titleKey = "set." + id;
+            _detailTitle.Text = Localization.Has(titleKey)
+                ? Localization.T(titleKey).ToUpper()
+                : Localization.T(detailKey).ToUpper();
+            _detailBody.Text = Localization.T(detailKey);
+            _detailLayer.Visible = true;
+        }
+
+        private void CloseDetail() => _detailLayer.Visible = false;
 
         // ── Actions ─────────────────────────────────────────────────────────
 
@@ -170,6 +335,13 @@ namespace BloodDragon
         {
             if (@event == null || !@event.IsActionPressed("ui_cancel"))
                 return;
+
+            if (_detailLayer != null && _detailLayer.Visible)
+            {
+                CloseDetail();
+                GetViewport()?.SetInputAsHandled();
+                return;
+            }
 
             GetViewport()?.SetInputAsHandled();
             // Godot 4.4+: change_scene_to_file removes this node from the tree

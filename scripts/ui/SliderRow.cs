@@ -31,6 +31,9 @@ namespace BloodDragon
         /// <summary>True when the label is a localization key, not display text.</summary>
         public bool LocalizedLabel { get; set; }
 
+        public string HintKey { get; set; } = "";
+        public string DetailKey { get; set; } = "";
+
         public double Value => _slider?.Value ?? _initial;
 
         public override void _Ready()
@@ -54,6 +57,28 @@ namespace BloodDragon
             _name.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             hbox.AddChild(_name);
 
+            if (!string.IsNullOrEmpty(DetailKey))
+            {
+                var info = new Button
+                {
+                    Text = "?",
+                    FocusMode = FocusModeEnum.None,
+                    CustomMinimumSize = new Vector2(28, 28),
+                    MouseFilter = MouseFilterEnum.Stop,
+                };
+                info.AddThemeFontOverride("font", MenuTheme.Mono);
+                info.AddThemeFontSizeOverride("font_size", 16);
+                info.AddThemeColorOverride("font_color", MenuTheme.Accent);
+                info.AddThemeStyleboxOverride("normal", MenuOverlay.ButtonStylebox(false));
+                info.AddThemeStyleboxOverride("hover", MenuOverlay.ButtonStylebox(true));
+                info.Pressed += () =>
+                {
+                    _slider.GrabFocus();
+                    SettingsHint.OpenDetail(DetailKey);
+                };
+                hbox.AddChild(info);
+            }
+
             _slider = new HSlider
             {
                 MinValue = _min,
@@ -65,8 +90,16 @@ namespace BloodDragon
             };
             hbox.AddChild(_slider);
 
-            _slider.FocusEntered += UpdateVisuals;
-            _slider.FocusExited += UpdateVisuals;
+            _slider.FocusEntered += () =>
+            {
+                UpdateVisuals();
+                SettingsHint.Announce(HintKey, DetailKey);
+            };
+            _slider.FocusExited += () =>
+            {
+                UpdateVisuals();
+                SettingsHint.Clear();
+            };
             _slider.ValueChanged += v =>
             {
                 UpdateLabel();
@@ -75,6 +108,12 @@ namespace BloodDragon
 
             UpdateLabel();
             UpdateVisuals();
+        }
+
+        public override void _GuiInput(InputEvent @event)
+        {
+            if (@event is InputEventMouseButton mb && mb.Pressed)
+                _slider.GrabFocus();
         }
 
         private void UpdateLabel()
@@ -87,7 +126,7 @@ namespace BloodDragon
         private void UpdateVisuals()
         {
             bool focused = _slider.HasFocus();
-            _bg.Color = focused ? MenuTheme.Accent : MenuTheme.Transparent;
+            _bg.Color = focused ? MenuTheme.RowFill : MenuTheme.Transparent;
             _name.AddThemeColorOverride("font_color", focused ? MenuTheme.TextActive : MenuTheme.TextNormal);
         }
     }

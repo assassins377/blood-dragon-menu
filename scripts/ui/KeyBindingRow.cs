@@ -18,6 +18,8 @@ namespace BloodDragon
         private Button _keyButton;
         private bool _capturing;
 
+        public string HintKey { get; set; } = "hint.rebind";
+
         public KeyBindingRow(string action, string displayName, string key)
         {
             _action = action;
@@ -46,6 +48,8 @@ namespace BloodDragon
             };
             _keyButton.AddThemeFontOverride("font", MenuTheme.Mono);
             _keyButton.Pressed += BeginCapture;
+            _keyButton.FocusEntered += () => SettingsHint.Announce(HintKey, "");
+            _keyButton.FocusExited += () => SettingsHint.Clear();
             hbox.AddChild(_keyButton);
         }
 

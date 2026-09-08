@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://d4m0nst4ts9k2"]
+[gd_scene format=3 uid="uid://d4m0nst4ttak2"]
 
 [ext_resource type="Script" uid="uid://f9zq7w3k8m2vp" path="res://scenes/settings_menu/categories/PerformanceStatsPanel.cs" id="1"]
 

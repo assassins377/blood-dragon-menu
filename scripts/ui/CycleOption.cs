@@ -33,6 +33,12 @@ namespace BloodDragon
         /// <summary>True when the option strings are localization keys, not display text.</summary>
         public bool LocalizedOptions { get; set; }
 
+        /// <summary>Localization key for the one-line footer hint.</summary>
+        public string HintKey { get; set; } = "";
+
+        /// <summary>If set, a (?) control opens the longer explanation card.</summary>
+        public string DetailKey { get; set; } = "";
+
         public int CurrentIndex => _index;
         public string CurrentValue => _options.Count > 0 ? Display(_options[_index]) : "";
 
@@ -61,6 +67,9 @@ namespace BloodDragon
             _name.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             hbox.AddChild(_name);
 
+            if (!string.IsNullOrEmpty(DetailKey))
+                hbox.AddChild(MakeInfoButton());
+
             _left = MenuTheme.MakeLabel("◄", 22, false);
             _value = MenuTheme.MakeLabel(CurrentValue, 22, false);            _value.HorizontalAlignment = HorizontalAlignment.Right;
             _value.CustomMinimumSize = new Vector2(170, 0);
@@ -69,9 +78,45 @@ namespace BloodDragon
             hbox.AddChild(_value);
             hbox.AddChild(_right);
 
-            FocusEntered += UpdateVisuals;
-            FocusExited += UpdateVisuals;
+            FocusEntered += OnFocusEntered;
+            FocusExited += OnFocusExited;
             UpdateVisuals();
+        }
+
+        private Button MakeInfoButton()
+        {
+            var b = new Button
+            {
+                Text = "?",
+                FocusMode = FocusModeEnum.None,
+                CustomMinimumSize = new Vector2(28, 28),
+                MouseFilter = MouseFilterEnum.Stop,
+            };
+            b.AddThemeFontOverride("font", MenuTheme.Mono);
+            b.AddThemeFontSizeOverride("font_size", 16);
+            b.AddThemeColorOverride("font_color", MenuTheme.Accent);
+            b.AddThemeColorOverride("font_hover_color", MenuTheme.TextActive);
+            b.AddThemeStyleboxOverride("normal", MenuOverlay.ButtonStylebox(false));
+            b.AddThemeStyleboxOverride("hover", MenuOverlay.ButtonStylebox(true));
+            b.AddThemeStyleboxOverride("pressed", MenuOverlay.ButtonStylebox(true));
+            b.Pressed += () =>
+            {
+                GrabFocus();
+                SettingsHint.OpenDetail(DetailKey);
+            };
+            return b;
+        }
+
+        private void OnFocusEntered()
+        {
+            UpdateVisuals();
+            SettingsHint.Announce(HintKey, DetailKey);
+        }
+
+        private void OnFocusExited()
+        {
+            UpdateVisuals();
+            SettingsHint.Clear();
         }
 
         public void SetOptions(IEnumerable<string> options, int defaultIndex = 0)
@@ -116,11 +161,11 @@ namespace BloodDragon
                        : focused   ? MenuTheme.TextActive
                                    : MenuTheme.TextNormal;
 
-            _bg.Color = focused ? MenuTheme.Accent : MenuTheme.Transparent;
+            _bg.Color = focused ? MenuTheme.RowFill : MenuTheme.Transparent;
             _name.AddThemeColorOverride("font_color", text);
-            _value.AddThemeColorOverride("font_color", text);
-            _left.AddThemeColorOverride("font_color", text);
-            _right.AddThemeColorOverride("font_color", text);
+            _value.AddThemeColorOverride("font_color", focused ? MenuTheme.TextActive : text);
+            _left.AddThemeColorOverride("font_color", MenuTheme.Accent);
+            _right.AddThemeColorOverride("font_color", MenuTheme.Accent);
             _left.Visible = focused;
             _right.Visible = focused;
         }
@@ -137,6 +182,13 @@ namespace BloodDragon
                 return;
             }
 
+            if (!string.IsNullOrEmpty(DetailKey) && IsInfoEvent(@event))
+            {
+                SettingsHint.OpenDetail(DetailKey);
+                AcceptEvent();
+                return;
+            }
+
             if (@event.IsActionPressed("ui_right") || @event.IsActionPressed("ui_accept"))
             {
                 CycleNext();
@@ -147,6 +199,14 @@ namespace BloodDragon
                 CyclePrev();
                 AcceptEvent();
             }
+        }
+
+        private static bool IsInfoEvent(InputEvent @event)
+        {
+            if (@event is InputEventKey k && k.Pressed && !k.Echo
+                && (k.Keycode == Key.F1 || k.PhysicalKeycode == Key.I))
+                return true;
+            return @event is InputEventJoypadButton jb && jb.Pressed && jb.ButtonIndex == JoyButton.Y;
         }
     }
 }

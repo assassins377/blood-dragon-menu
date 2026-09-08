@@ -5,15 +5,19 @@ namespace BloodDragon
     /// <summary>Shared palette, fonts and small factory helpers for the menu UI.</summary>
     public static class MenuTheme
     {
-        public static readonly Color Background    = new("#020d05"); // very dark green
-        public static readonly Color Accent        = new("#00ff00"); // neon green
-        public static readonly Color AccentSoft    = new("#39ff14");
+        public static readonly Color Background    = new("#eef3ea");
+        public static readonly Color Accent        = new("#1f7a3a");
+        public static readonly Color AccentSoft    = new("#b7d9bc");
+        public static readonly Color Magenta       = new("#c43b6e");
+        public static readonly Color RowFill       = new(0.78f, 0.90f, 0.80f, 1.0f);
         public static readonly Color Transparent   = new(0, 0, 0, 0);
-        public static readonly Color TextNormal    = new("#cccccc");
-        public static readonly Color TextActive     = new("#0a0a0a");
-        public static readonly Color TextDisabled  = new("#555555");
+        public static readonly Color TextNormal    = new("#2c332c");
+        public static readonly Color TextActive    = new("#145c28");
+        public static readonly Color TextDisabled  = new("#8a9488");
 
         private static Font _mono;
+        private static StyleBoxFlat _panelBordered;
+        private static StyleBoxFlat _panelPlain;
 
         /// <summary>A monospace system font (Courier/Consolas/DejaVu fallback chain).</summary>
         public static Font Mono
@@ -22,7 +26,11 @@ namespace BloodDragon
             {
                 _mono ??= new SystemFont
                 {
-                    FontNames = new[] { "Courier New", "Consolas", "DejaVu Sans Mono", "Liberation Mono", "monospace" },
+                    FontNames = new[] { "Ubuntu Mono", "DejaVu Sans Mono", "Liberation Mono", "Noto Sans Mono", "Consolas", "monospace" },
+                    Antialiasing = TextServer.FontAntialiasing.Gray,
+                    Hinting = TextServer.Hinting.Normal,
+                    SubpixelPositioning = TextServer.SubpixelPositioning.Disabled,
+                    Oversampling = 1.0f,
                 };
                 return _mono;
             }
@@ -41,17 +49,29 @@ namespace BloodDragon
             return l;
         }
 
-        /// <summary>A flat StyleBox with an optional green border (right settings panel).</summary>
+        /// <summary>A flat StyleBox with an optional green border (right settings panel). Cached.</summary>
         public static StyleBoxFlat Panel(bool border)
         {
-            var sb = new StyleBoxFlat { BgColor = new Color(0.01f, 0.05f, 0.02f, 0.6f) };
             if (border)
             {
-                sb.BorderColor = Accent;
-                sb.SetBorderWidthAll(2);
+                if (_panelBordered == null)
+                {
+                    var sb = new StyleBoxFlat { BgColor = new Color(1f, 1f, 1f, 1f) };
+                    sb.BorderColor = Accent;
+                    sb.SetBorderWidthAll(2);
+                    sb.SetContentMarginAll(16);
+                    _panelBordered = sb;
+                }
+                return _panelBordered;
             }
-            sb.SetContentMarginAll(16);
-            return sb;
+
+            if (_panelPlain == null)
+            {
+                var sb = new StyleBoxFlat { BgColor = new Color(1f, 1f, 1f, 1f) };
+                sb.SetContentMarginAll(16);
+                _panelPlain = sb;
+            }
+            return _panelPlain;
         }
     }
 }

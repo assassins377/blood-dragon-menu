@@ -5,6 +5,9 @@ namespace BloodDragon
     /// <summary>Helpers for the CRT scanline / vignette overlay and the left-side menu buttons.</summary>
     public static class MenuOverlay
     {
+        private static StyleBoxFlat _selectedStylebox;
+        private static StyleBoxFlat _idleStylebox;
+
         /// <summary>Adds a top CanvasLayer with the CRT scanline + vignette shader over everything.</summary>
         public static void AddCrt(Node root)
         {
@@ -16,28 +19,41 @@ namespace BloodDragon
             rect.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
             rect.MouseFilter = Control.MouseFilterEnum.Ignore;
             var mat = new ShaderMaterial { Shader = shader };
-            if (SettingsManager.IsSoftwareRenderer())
-            {
-                mat.SetShaderParameter("scanline_count", 280.0f);
-                mat.SetShaderParameter("scanline_intensity", 0.08f);
-                mat.SetShaderParameter("noise_intensity", 0.0f);
-            }
+            // Scanlines/noise sit on top of glyphs and make text look muddy.
+            mat.SetShaderParameter("scanline_intensity", 0.0f);
+            mat.SetShaderParameter("noise_intensity", 0.0f);
+            mat.SetShaderParameter("vignette_radius", 0.98f);
+            mat.SetShaderParameter("vignette_softness", 0.35f);
             rect.Material = mat;
             layer.AddChild(rect);
             root.AddChild(layer);
         }
 
-        /// <summary>Menu-button background stylebox with the shared padding.</summary>
-        public static StyleBoxFlat ButtonStylebox(Color bg)
+        /// <summary>Menu-button background. Selected = left magenta bar + faint phosphor fill, not a lime slab.
+        /// Instances are cached so repeated styling (category switches, hover states) does not churn the GC.</summary>
+        public static StyleBoxFlat ButtonStylebox(bool selected)
         {
-            var sb = new StyleBoxFlat { BgColor = bg };
+            if (!selected && _idleStylebox != null) return _idleStylebox;
+            if (selected && _selectedStylebox != null) return _selectedStylebox;
+
+            var sb = new StyleBoxFlat { BgColor = selected ? MenuTheme.RowFill : MenuTheme.Transparent };
             sb.SetContentMarginAll(10);
             sb.ContentMarginLeft = 18;
+            if (selected)
+            {
+                sb.BorderColor = MenuTheme.Accent;
+                sb.BorderWidthLeft = 3;
+                sb.BorderWidthTop = 0;
+                sb.BorderWidthBottom = 0;
+                sb.BorderWidthRight = 0;
+            }
+
+            if (selected) _selectedStylebox = sb;
+            else _idleStylebox = sb;
             return sb;
         }
 
-        /// <summary>Left-aligned menu button: transparent normally, full green fill on hover/focus.
-        /// Plays the hover blip automatically, so callers never wire that up themselves.</summary>
+        /// <summary>Left-aligned menu button. Hover/focus keep phosphor text on a dark row.</summary>
         public static Button MakeMenuButton(string text, int fontSize = 30)
         {
             var b = new Button
@@ -49,8 +65,9 @@ namespace BloodDragon
             b.AddThemeFontOverride("font", MenuTheme.Mono);
             b.AddThemeFontSizeOverride("font_size", fontSize);
 
-            var active = ButtonStylebox(MenuTheme.Accent);
-            b.AddThemeStyleboxOverride("normal", ButtonStylebox(MenuTheme.Transparent));
+            var active = ButtonStylebox(selected: true);
+            var idle = ButtonStylebox(selected: false);
+            b.AddThemeStyleboxOverride("normal", idle);
             b.AddThemeStyleboxOverride("hover", active);
             b.AddThemeStyleboxOverride("pressed", active);
             b.AddThemeStyleboxOverride("focus", active);

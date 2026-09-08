@@ -3,21 +3,23 @@ using Godot;
 namespace BloodDragon
 {
     /// <summary>
-    /// In-game performance overlay driven by the МОНИТОРИНГ settings.
-    /// Compact: FPS + frametime + draw calls on one line.
-    /// Full: adds objects, primitives, video/buffer/texture memory,
-    /// node/orphan counts and shader pipeline compilations.
-    /// Values come from the engine's Performance singleton; anything the
-    /// current renderer cannot report is shown as N/A.
+    /// In-game overlay: FPS, frametime, draw calls, memory, nodes.
+    /// Compact = one line; Full = four lines. Lives above the CRT layer.
+    /// Refreshes at most 5 Hz while visible and does no work while hidden.
     /// </summary>
     public partial class StatsOverlay : CanvasLayer
     {
+        private const float RefreshInterval = 0.2f; // 5 Hz: enough for human reading
+
         private Label _label;
-        private Timer _timer;
+        private float _frameMs;
+        private float _refreshAccum;
+        private bool _wasShown;
 
         public override void _Ready()
         {
-            Layer = 90; // Above gameplay and menus, below the CRT overlay (100).
+            // CRT is layer 100; stats must sit above it or scanlines eat the text.
+            Layer = 110;
             ProcessMode = ProcessModeEnum.Always;
 
             _label = new Label
@@ -27,20 +29,10 @@ namespace BloodDragon
             };
             _label.AddThemeFontOverride("font", MenuTheme.Mono);
             _label.AddThemeFontSizeOverride("font_size", 16);
-            _label.AddThemeColorOverride("font_color", MenuTheme.Accent);
-            _label.AddThemeColorOverride("font_outline_color", new Color(0, 0, 0, 0.8f));
-            _label.AddThemeConstantOverride("outline_size", 2);
+            _label.AddThemeColorOverride("font_color", MenuTheme.TextActive);
+            _label.AddThemeColorOverride("font_outline_color", new Color(1, 1, 1, 1));
+            _label.AddThemeConstantOverride("outline_size", 1);
             AddChild(_label);
-
-            // TIME_FPS is only refreshed once per second by the engine,
-            // so updating more often than 2 Hz is pointless.
-            _timer = new Timer
-            {
-                WaitTime = 0.5,
-                Autostart = true,
-            };
-            _timer.Timeout += Refresh;
-            AddChild(_timer);
 
             if (SettingsManager.Instance != null)
                 SettingsManager.Instance.Applied += OnSettingsApplied;
@@ -54,12 +46,45 @@ namespace BloodDragon
                 SettingsManager.Instance.Applied -= OnSettingsApplied;
         }
 
+        public override void _Process(double delta)
+        {
+            var s = SettingsManager.Instance?.Current;
+            bool show = s != null && s.ShowStats;
+
+            if (!show)
+            {
+                if (_wasShown)
+                {
+                    _wasShown = false;
+                    Visible = false;
+                    _label.Text = "";
+                }
+                return;
+            }
+
+            if (delta > 0)
+            {
+                float sample = (float)(delta * 1000.0);
+                _frameMs = _frameMs <= 0 ? sample : Mathf.Lerp(_frameMs, sample, 0.2f);
+            }
+
+            // Throttled text rebuild: avoids per-frame string allocation and
+            // canvas rebatching while the numbers barely change.
+            _refreshAccum += (float)delta;
+            if (_refreshAccum < RefreshInterval)
+                return;
+            _refreshAccum = 0f;
+
+            Refresh();
+        }
+
         private void OnSettingsApplied() => Refresh();
 
         private void Refresh()
         {
             var s = SettingsManager.Instance?.Current;
             bool show = s != null && s.ShowStats;
+            _wasShown = show;
             Visible = show;
             if (!show)
             {
@@ -67,53 +92,51 @@ namespace BloodDragon
                 return;
             }
 
-            double fps = Performance.GetMonitor(Performance.Monitor.TimeFps);
-            double frameMs = Performance.GetMonitor(Performance.Monitor.TimeProcess) * 1000.0f;
+            double fps = Engine.GetFramesPerSecond();
+            if (fps <= 0)
+                fps = Performance.GetMonitor(Performance.Monitor.TimeFps);
 
-            if (s.StatsMode == StatsMode.Compact)
+            ulong draws = Info(RenderingServer.RenderingInfo.TotalDrawCallsInFrame);
+            ulong objects = Info(RenderingServer.RenderingInfo.TotalObjectsInFrame);
+            ulong prims = Info(RenderingServer.RenderingInfo.TotalPrimitivesInFrame);
+
+            if (s.StatsMode != StatsMode.Full)
             {
-                _label.Text = $"FPS {fps:0} | {frameMs:0.0} {T("stats.ms")} | {T("stats.draw")} {Monitor(Performance.Monitor.RenderTotalDrawCallsInFrame)}";
+                _label.Text = $"FPS {fps:0} | {_frameMs:0.0} {T("stats.ms")} | {T("stats.draw")} {draws}";
                 return;
             }
 
             _label.Text =
-                $"FPS {fps:0} | {frameMs:0.0} {T("stats.ms")}\n" +
-                $"{T("stats.draw")} {Monitor(Performance.Monitor.RenderTotalDrawCallsInFrame)} | " +
-                $"{T("stats.objects")} {Monitor(Performance.Monitor.RenderTotalObjectsInFrame)} | " +
-                $"{T("stats.prims")} {Monitor(Performance.Monitor.RenderTotalPrimitivesInFrame)}\n" +
-                $"{T("stats.video_mem")} {Mem(Performance.Monitor.RenderVideoMemUsed)} | " +
-                $"{T("stats.buffer_mem")} {Mem(Performance.Monitor.RenderBufferMemUsed)} | " +
-                $"{T("stats.texture_mem")} {Mem(Performance.Monitor.RenderTextureMemUsed)}\n" +
-                $"{T("stats.nodes")} {Count(Performance.Monitor.ObjectNodeCount)} | " +
-                $"{T("stats.orphans")} {Count(Performance.Monitor.ObjectOrphanNodeCount)} | " +
+                $"FPS {fps:0} | {_frameMs:0.0} {T("stats.ms")}\n" +
+                $"{T("stats.draw")} {draws} | {T("stats.objects")} {objects} | {T("stats.prims")} {prims}\n" +
+                $"{T("stats.video_mem")} {Mem(RenderingServer.RenderingInfo.VideoMemUsed)} | " +
+                $"{T("stats.buffer_mem")} {Mem(RenderingServer.RenderingInfo.BufferMemUsed)} | " +
+                $"{T("stats.texture_mem")} {Mem(RenderingServer.RenderingInfo.TextureMemUsed)}\n" +
+                $"{T("stats.nodes")} {Performance.GetMonitor(Performance.Monitor.ObjectNodeCount):0} | " +
+                $"{T("stats.orphans")} {Performance.GetMonitor(Performance.Monitor.ObjectOrphanNodeCount):0} | " +
                 $"{T("stats.shader_compiles")} {Compiles()}";
         }
 
         private static string T(string key) => Localization.T(key);
 
-        /// <summary>Node counters: 0 is a real value, always shown as-is.</summary>
-        private static string Count(Performance.Monitor m)
-            => $"{Performance.GetMonitor(m):0}";
+        private static ulong Info(RenderingServer.RenderingInfo key)
+            => RenderingServer.GetRenderingInfo(key);
 
-        /// <summary>Render metrics: some renderers report 0 when unsupported — show N/A then.</summary>
-        private static string Monitor(Performance.Monitor m)
+        private static string Mem(RenderingServer.RenderingInfo key)
         {
-            double v = Performance.GetMonitor(m);
-            return v > 0 ? $"{v:0}" : T("stats.na");
-        }
-
-        private static string Mem(Performance.Monitor m)
-        {
-            double v = Performance.GetMonitor(m);
-            return v > 0 ? $"{v / 1048576.0f:0.0} MB" : T("stats.na");
+            ulong v = RenderingServer.GetRenderingInfo(key);
+            return v > 0 ? $"{v / 1048576.0:0.0} MB" : T("stats.na");
         }
 
         private static string Compiles()
         {
-            double d = Performance.GetMonitor(Performance.Monitor.PipelineCompilationsDraw);
-            double c = Performance.GetMonitor(Performance.Monitor.PipelineCompilationsCanvas);
-            double s = Performance.GetMonitor(Performance.Monitor.PipelineCompilationsSpecialization);
-            return $"{d + c + s:0}";
+            ulong n =
+                Info(RenderingServer.RenderingInfo.PipelineCompilationsCanvas) +
+                Info(RenderingServer.RenderingInfo.PipelineCompilationsMesh) +
+                Info(RenderingServer.RenderingInfo.PipelineCompilationsSurface) +
+                Info(RenderingServer.RenderingInfo.PipelineCompilationsDraw) +
+                Info(RenderingServer.RenderingInfo.PipelineCompilationsSpecialization);
+            return $"{n}";
         }
     }
 }

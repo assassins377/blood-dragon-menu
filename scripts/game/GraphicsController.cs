@@ -10,7 +10,8 @@ namespace BloodDragon
     public static class GraphicsController
     {
         public static void Apply(WorldEnvironment worldEnv, DirectionalLight3D sun, Camera3D cam,
-                                 Viewport viewport, ShaderMaterial calibration, GameSettings s)
+                                 Viewport viewport, ShaderMaterial calibration, CanvasLayer calibrationLayer,
+                                 GameSettings s)
         {
             bool software = SettingsManager.IsSoftwareRenderer();
             // Compatibility has no SSIL (Godot renderer feature table).
@@ -69,6 +70,16 @@ namespace BloodDragon
                 calibration.SetShaderParameter("brightness", s.Brightness * 2f);
                 calibration.SetShaderParameter("contrast", s.Contrast);
                 calibration.SetShaderParameter("gamma", s.Gamma);
+
+                // Skip the full-screen pass when the transform is identity: avoids
+                // a screen-texture copy + pass on every frame for no visual change.
+                if (calibrationLayer != null)
+                {
+                    bool neutral = Near(s.Brightness, 0.5f, 0.005f)
+                        && Near(s.Contrast, 1.0f, 0.005f)
+                        && Near(s.Gamma, 2.2f, 0.001f);
+                    calibrationLayer.Visible = !neutral;
+                }
             }
 
             // No runtime API in Godot (documented, applied elsewhere or restart-only):
@@ -77,5 +88,7 @@ namespace BloodDragon
             //   AudioOutput (speaker mode, startup).
             // Applied elsewhere: FpsLimit (SettingsManager), AlphaToCoverage (Game).
         }
+
+        private static bool Near(float a, float b, float eps) => Mathf.Abs(a - b) <= eps;
     }
 }

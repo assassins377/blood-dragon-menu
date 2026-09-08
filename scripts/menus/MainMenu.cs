@@ -168,8 +168,14 @@ namespace BloodDragon
 
         private void FillList((string Label, System.Action OnPress)[] items, bool animate)
         {
-            while (_list.GetChildCount() > 0)
-                _list.GetChild(0).Free();
+            // QueueFree: buttons stay locked while their Pressed callback is running.
+            // Free() in a while(GetChildCount) loop fails and never removes the node,
+            // so the engine logs the same error until the disk fills up.
+            foreach (Node child in _list.GetChildren())
+            {
+                _list.RemoveChild(child);
+                child.QueueFree();
+            }
 
             _list.Visible = true;
             var buttons = new List<Button>();

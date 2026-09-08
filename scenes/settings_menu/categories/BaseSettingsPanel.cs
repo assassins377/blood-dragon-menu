@@ -57,6 +57,7 @@ namespace BloodDragon
         protected CycleOption Cycle(string label, string[] opts, int index, Action<int> onChange)
         {
             var row = new CycleOption(label, opts, index) { LocalizedOptions = true };
+            AttachHelp(row, label);
             row.ValueChanged += idx => onChange(idx);
             return row;
         }
@@ -67,8 +68,25 @@ namespace BloodDragon
         protected SliderRow Percent(string label, float value, Action<float> onChange)
         {
             var s = new SliderRow(label, 0, 100, 1, value * 100, "F0", "%") { LocalizedLabel = true };
+            AttachHelp(s, label);
             s.ValueChanged += v => onChange((float)(v / 100.0));
             return s;
+        }
+
+        protected static void AttachHelp(CycleOption row, string label)
+        {
+            string id = SettingsHint.FromLabel(label);
+            row.HintKey = "hint." + id;
+            if (Localization.Has("info." + id))
+                row.DetailKey = "info." + id;
+        }
+
+        protected static void AttachHelp(SliderRow row, string label)
+        {
+            string id = SettingsHint.FromLabel(label);
+            row.HintKey = "hint." + id;
+            if (Localization.Has("info." + id))
+                row.DetailKey = "info." + id;
         }
 
         protected RichTextLabel RichPage(string bbcode)

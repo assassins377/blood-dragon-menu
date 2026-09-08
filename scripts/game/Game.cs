@@ -14,6 +14,7 @@ namespace BloodDragon
         private DirectionalLight3D _sun;
         private Player _player;
         private CanvasLayer _pauseLayer;
+        private CanvasLayer _calibrationLayer;
         private ShaderMaterial _calibration;
         private bool _paused;
 
@@ -46,7 +47,7 @@ namespace BloodDragon
 
         private void ApplyGraphics()
             => GraphicsController.Apply(_worldEnv, _sun, _player?.Camera, GetViewport(),
-                                        _calibration, SettingsManager.Instance.Current);
+                                        _calibration, _calibrationLayer, SettingsManager.Instance.Current);
 
         // ── World ────────────────────────────────────────────────────────
 
@@ -151,11 +152,12 @@ namespace BloodDragon
             AddChild(layer);
 
             var cross = MenuTheme.MakeLabel("+", 26, false);
-            cross.AddThemeColorOverride("font_color", MenuTheme.Accent);
+            cross.AddThemeColorOverride("font_color", new Color(0.85f, 1f, 0.85f));
             cross.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.Center);
             layer.AddChild(cross);
 
             var hint = MenuTheme.MakeLabel("game.hint", 18);
+            hint.AddThemeColorOverride("font_color", new Color(0.92f, 0.96f, 0.90f));
             hint.Position = new Vector2(40, 30);
             layer.AddChild(hint);
         }
@@ -166,12 +168,12 @@ namespace BloodDragon
             if (shader == null) return;
 
             _calibration = new ShaderMaterial { Shader = shader };
-            var layer = new CanvasLayer { Layer = 80 };
+            _calibrationLayer = new CanvasLayer { Layer = 80 };
             var rect = new ColorRect { Color = new Color(1, 1, 1, 1), Material = _calibration };
             rect.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
             rect.MouseFilter = Control.MouseFilterEnum.Ignore;
-            layer.AddChild(rect);
-            AddChild(layer);
+            _calibrationLayer.AddChild(rect);
+            AddChild(_calibrationLayer);
         }
 
         private void BuildPauseMenu()
@@ -180,29 +182,57 @@ namespace BloodDragon
             _pauseLayer.ProcessMode = ProcessModeEnum.Always;
             AddChild(_pauseLayer);
 
-            var dim = new ColorRect { Color = new Color(0, 0, 0, 0.7f) };
+            var dim = new ColorRect { Color = new Color(0, 0, 0, 0.45f) };
             dim.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
             _pauseLayer.AddChild(dim);
 
+            var center = new CenterContainer();
+            center.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+            center.MouseFilter = Control.MouseFilterEnum.Ignore;
+            _pauseLayer.AddChild(center);
+
             var vbox = new VBoxContainer();
-            vbox.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.Center);
             vbox.AddThemeConstantOverride("separation", 16);
-            _pauseLayer.AddChild(vbox);
+            vbox.Alignment = BoxContainer.AlignmentMode.Center;
+            center.AddChild(vbox);
 
             var title = MenuTheme.MakeLabel("menu.pause", 40);
-            title.AddThemeColorOverride("font_color", MenuTheme.Accent);
+            title.AddThemeColorOverride("font_color", new Color(0.92f, 0.96f, 0.90f));
             title.HorizontalAlignment = HorizontalAlignment.Center;
             vbox.AddChild(title);
 
             var resume = MenuOverlay.MakeMenuButton("menu.resume", 26);
             resume.CustomMinimumSize = new Vector2(420, 50);
+            StylePauseButton(resume);
             resume.Pressed += () => { AudioManager.Instance?.PlaySelect(); SetPaused(false); };
             vbox.AddChild(resume);
 
             var toMenu = MenuOverlay.MakeMenuButton("menu.to_main_menu", 26);
             toMenu.CustomMinimumSize = new Vector2(420, 50);
+            StylePauseButton(toMenu);
             toMenu.Pressed += OnQuitToMenu;
             vbox.AddChild(toMenu);
+        }
+
+        private static void StylePauseButton(Button b)
+        {
+            var idle = new StyleBoxFlat { BgColor = new Color(0, 0, 0, 0) };
+            idle.SetContentMarginAll(10);
+            idle.ContentMarginLeft = 18;
+            var focus = new StyleBoxFlat { BgColor = new Color(1, 1, 1, 0.08f) };
+            focus.SetContentMarginAll(10);
+            focus.ContentMarginLeft = 18;
+            focus.BorderColor = new Color(0.85f, 1f, 0.85f);
+            focus.BorderWidthLeft = 3;
+            b.AddThemeStyleboxOverride("normal", idle);
+            b.AddThemeStyleboxOverride("hover", focus);
+            b.AddThemeStyleboxOverride("pressed", focus);
+            b.AddThemeStyleboxOverride("focus", focus);
+            var on = new Color(0.92f, 0.96f, 0.90f);
+            b.AddThemeColorOverride("font_color", on);
+            b.AddThemeColorOverride("font_hover_color", on);
+            b.AddThemeColorOverride("font_focus_color", on);
+            b.AddThemeColorOverride("font_pressed_color", on);
         }
 
         // ── Pause ──────────────────────────────────────────────────────────
